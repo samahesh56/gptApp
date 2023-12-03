@@ -1,7 +1,7 @@
 from openai import OpenAI
 client = OpenAI()
 
-def chat_gpt(prompt, model="gpt-3.5-turbo"):
+def chat_gpt(prompt, model="gpt-4"):
     messages=[
         {"role": "system", "content": "You are an assistant, skilled in explaining and providing answers for any question given by a user."},
         {"role": "user", "content": prompt}
@@ -9,7 +9,6 @@ def chat_gpt(prompt, model="gpt-3.5-turbo"):
     response = client.chat.completions.create(
         model=model,
         messages=messages,
-        temperature=0.7  
 )
     
     reply = response.choices[0].message.content

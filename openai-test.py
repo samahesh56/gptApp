@@ -1,22 +1,8 @@
 import tkinter as tk
 
 from openai import OpenAI
-from conversation import load_conversation, save_conversation, update_conversation_state, get_last_gpt_response
+from conversation import update_conversation_state, get_last_gpt_response, chat_gpt
 
-client = OpenAI()
-
-def chat_gpt(prompt, model="gpt-3.5-turbo"):
-    messages=[
-        {"role": "system", "content": "You are an assistant providing help with an API script program. This API scipt program utilizes chatGPT's api inside a python script. "},
-        {"role": "user", "content": prompt}
-  ]
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-)
-  
-    reply = response.choices[0].message.content
-    return reply
 ''' THIS ALLOWS THE USER BASIC FUNCTIONALITY IN THE TERMINAL
 while True:
     user_input = input("Ask ChatGPT, enter 'exit' or 'quit' to stop: ")

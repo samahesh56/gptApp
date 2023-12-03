@@ -1,28 +1,50 @@
 import json
+from openai import OpenAI
+
+client = OpenAI()
+
+def chat_gpt(prompt, model="gpt-3.5-turbo"):
+    messages = [
+        {"role": "system", "content": "You are an assistant providing help with recipes"},
+        {"role": "user", "content": prompt}
+    ]
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+    )
+
+    response = response.choices[0].message.content
+    return response
 
 def load_conversation():
     try:
         with open('conversation.json', 'r') as file:
             return json.load(file)
     except FileNotFoundError:
-        return {}
+        return {"messages": []}
     
-def save_conversation(state):
-    with open('conversation_state.json', 'w') as file:
-        json.dump(state, file)
+def save_conversation(messages):
+    with open('conversation.json', 'w') as file:
+        json.dump({"messages": messages}, file)
 
 def get_last_gpt_response():
     conversation_state = load_conversation()
-    return conversation_state.get('gpt_response', '')
+    messages = conversation_state.get('messages', [])
+    
+    # Find the last assistant response in the conversation
+    for i in range(len(messages) - 1, -1, -1):
+        if messages[i]["role"] == "assistant":
+            return messages[i]["content"]
+    
+    return ""
 
 
 def update_conversation_state(user_input, gpt_response):
-    # Load existing conversation state
-    conversation = load_conversation()
+    messages = load_conversation().get('messages', [])
 
     # Update with new information
-    conversation['user_input'] = user_input
-    conversation['gpt_response'] = gpt_response
+    messages.append({"role": "user", "content": user_input})
+    messages.append({"role": "assistant", "content": gpt_response})
 
     # Save the updated state
-    save_conversation(conversation) #Calls save_conservation to write updated state 
+    save_conversation(messages)

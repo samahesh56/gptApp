@@ -14,8 +14,6 @@ while True:
     print("ChatGPT:", response)
     '''
 
-global_conversation_state = {"messages": []}
-
 def send_message():
     user_input = user_input_entry.get()
     user_input_entry.delete(0, tk.END)
@@ -30,7 +28,7 @@ def send_message():
     conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
     conversation_text.see(tk.END)
 
-    update_conversation_state(user_input, gpt_response, global_conversation_state)
+    update_conversation_state(user_input, gpt_response)
 
 # Initialize the main application window
 root = tk.Tk()

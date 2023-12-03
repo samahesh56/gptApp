@@ -5,7 +5,7 @@ client = OpenAI()
 
 def chat_gpt(prompt, model="gpt-3.5-turbo"):
     messages = [
-        {"role": "system", "content": "You are an assistant providing help with calculus problems"},
+        {"role": "system", "content": "You are an assistant providing help with recipes"},
         {"role": "user", "content": prompt}
     ]
     response = client.chat.completions.create(
@@ -17,13 +17,11 @@ def chat_gpt(prompt, model="gpt-3.5-turbo"):
     return response
 
 def load_conversation():
-    '''
     try:
         with open('conversation.json', 'r') as file:
             return json.load(file)
     except FileNotFoundError:
-    '''
-    return {"messages": []}
+        return {"messages": []}
     
 def save_conversation(messages):
     with open('conversation.json', 'w') as file:

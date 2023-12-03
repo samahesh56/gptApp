@@ -3,6 +3,13 @@ from openai import OpenAI
 
 client = OpenAI()
 
+DEFAULT_CONVERSATION = {
+    "messages": [
+        {"role": "system", "content": "You are an assistant providing help with recipes"},
+        {"role": "user", "content": "What can you help me with today?"}
+    ]
+}
+
 def chat_gpt(prompt, model="gpt-3.5-turbo"):
     messages = [
         {"role": "system", "content": "You are an assistant providing help with recipes"},
@@ -48,3 +55,11 @@ def update_conversation_state(user_input, gpt_response):
 
     # Save the updated state
     save_conversation(messages)
+
+def reset_conversation():
+    # Update the conversation state with the default messages
+    save_conversation(DEFAULT_CONVERSATION["messages"])
+
+reset_conversation()
+
+conversation_state = load_conversation()

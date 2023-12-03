@@ -3,8 +3,6 @@ import tkinter as tk
 from openai import OpenAI
 from conversation import update_conversation_state, get_last_gpt_response, chat_gpt
 
-client = OpenAI()
-    
 ''' THIS ALLOWS THE USER BASIC FUNCTIONALITY IN THE TERMINAL
 while True:
     user_input = input("Ask ChatGPT, enter 'exit' or 'quit' to stop: ")

@@ -5,7 +5,7 @@ client = OpenAI()
 
 DEFAULT_CONVERSATION = {
     "messages": [
-        {"role": "system", "content": "You are an assistant providing help with recipes"},
+        {"role": "system", "content": "You are an assistant providing help with programming"},
         {"role": "user", "content": "What can you help me with today?"}
     ]
 }
@@ -26,11 +26,11 @@ def send_message(user_input, conversation_text):
     conversation_text.see(tk.END)
 
 def chat_gpt(prompt, model):
-    improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
+    #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
 
     messages = [
         {"role": "system", "content": "You are an assistant providing help with any issues. "},
-        {"role": "user", "content": prompt + improved_prompt}
+        {"role": "user", "content": prompt}
     ]
     response = client.chat.completions.create(
         model=model,

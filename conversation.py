@@ -3,13 +3,6 @@ from openai import OpenAI
 
 client = OpenAI()
 
-DEFAULT_CONVERSATION = {
-    "messages": [
-        {"role": "system", "content": "You are an assistant providing help with programming"}, # This is the base conversation when program is rerun
-        {"role": "user", "content": "What can you help me with today?"}
-    ]
-}
-
 def send_message(user_input, conversation_text):
     last_conversation = get_last_gpt_response() # 
     prompt = f"{user_input}\n{last_conversation}" # concatenates the user_input with the chat-gpt response as a basic prompt for the GPT to read
@@ -55,7 +48,7 @@ def get_last_gpt_response():
 def load_conversation():
     try:
         with open('conversation.json', 'r') as file: # opens conversation.json file, reads it 
-            return json.load(file) # returns JSON, the dictionary structure 
+            return json.load(file) # returns JSON, the dictionary structure which holds the conversation details 
         # Attempts to read the conversaition.json file
         # Loads this content as a JSON object, which is a key/value pair
         # messages is the list of messages in the conversation like this: [messages: {"role": ~, "content":, ~}, {}, etc]
@@ -80,7 +73,15 @@ def update_conversation_state(user_input, gpt_response):
 
 def reset_conversation():
     # Update the conversation state with the default messages
-    save_conversation(DEFAULT_CONVERSATION["messages"])
+    system_message = "You are an assistant providing help with any issues." # Edit this as the main prompt 
+    user_message = "What can you help me with today?" # Edit this as the main prompt response 
+    messages = [
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
+
+    # Save the updated state
+    save_conversation(messages)
 
 reset_conversation()
 

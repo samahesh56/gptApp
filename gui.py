@@ -26,5 +26,6 @@ class Main(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
+    root.title("GPT App")
     Main(root).pack(side="top", fill="both", expand=True)
     root.mainloop()

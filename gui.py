@@ -4,14 +4,14 @@ from conversation import send_message
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.parent = parent
+        self.parent = parent # Instantiates frame to parent widget  
         
-        user_input_entry = tk.Entry(self.parent, width=80)
+        self.user_input_entry = tk.Entry(self, width=80) # User-input 
 
-        send_button = tk.Button(self.parent, text="Send", command=self.on_send_button_click)
+        send_button = tk.Button(self, text="Send", command=self.on_send_button_click)
 
         # Layout the widgets
-        user_input_entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.user_input_entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
         send_button.pack(side=tk.RIGHT, padx=5, pady=5)
 
         # Main conversation text widget
@@ -22,7 +22,7 @@ class Main(tk.Frame):
         user_input = self.user_input_entry.get()
         self.user_input_entry.delete(0, tk.END)
 
-        send_message(user_input, self.conversation_text)
+        send_message(user_input, self.conversation_text) #conversation_text is gpt response it takes in (the base prompt)
 
 if __name__ == "__main__":
     root = tk.Tk()

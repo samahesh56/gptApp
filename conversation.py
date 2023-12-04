@@ -1,6 +1,5 @@
-import json
+import json, tkinter as tk
 from openai import OpenAI
-import tkinter as tk
 
 client = OpenAI()
 
@@ -11,8 +10,8 @@ DEFAULT_CONVERSATION = {
     ]
 }
 
-def send_message(user_input, conversation_text_widget):
-    last_conversation = get_last_gpt_response()
+def send_message(user_input, conversation_text):
+    last_conversation = get_last_gpt_response() # 
     prompt = f"{user_input}\n{last_conversation}"
 
     # Call the chat_gpt function or any other relevant logic
@@ -22,9 +21,9 @@ def send_message(user_input, conversation_text_widget):
     update_conversation_state(user_input, gpt_response)
 
     # Display the conversation in the text widget
-    conversation_text_widget.insert(tk.END, f"User: {user_input}\n")
-    conversation_text_widget.insert(tk.END, f"GPT: {gpt_response}\n\n")
-    conversation_text_widget.see(tk.END)
+    conversation_text.insert(tk.END, f"User: {user_input}\n")
+    conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
+    conversation_text.see(tk.END)
 
 def chat_gpt(prompt, model="gpt-3.5-turbo"):
     messages = [
@@ -39,20 +38,9 @@ def chat_gpt(prompt, model="gpt-3.5-turbo"):
     response = response.choices[0].message.content
     return response
 
-def load_conversation():
-    try:
-        with open('conversation.json', 'r') as file:
-            return json.load(file)
-    except FileNotFoundError:
-        return {"messages": []}
-    
-def save_conversation(messages):
-    with open('conversation.json', 'w') as file:
-        json.dump({"messages": messages}, file)
-
 def get_last_gpt_response():
-    conversation_state = load_conversation()
-    messages = conversation_state.get('messages', [])
+    conversation_state = load_conversation() # loads the latest conversation, which is read as the latest dictionary key/value pairs (.json file)
+    messages = conversation_state.get('messages', []) 
     
     # Find the last assistant response in the conversation
     for i in range(len(messages) - 1, -1, -1):
@@ -61,6 +49,21 @@ def get_last_gpt_response():
     
     return ""
 
+def load_conversation():
+    try:
+        with open('conversation.json', 'r') as file: # opens conversation.json file, reads it 
+            return json.load(file) # returns JSON, the dictionary structure 
+        # Attempts to read the conversaition.json file
+        # Loads this content as a JSON object, which is a key/value pair
+        # messages is the list of messages in the conversation like this: [messages: {"role": ~, "content":, ~}, {}, etc]
+        # the messages hold the API model references (role, content) that contribute to prompt phrasing. 
+        # prompt is read in the JSON file, assigning either user/assistant pairs to be interpreted by the GPT
+    except FileNotFoundError:
+        return {"messages": []}
+    
+def save_conversation(messages):
+    with open('conversation.json', 'w') as file:
+        json.dump({"messages": messages}, file)
 
 def update_conversation_state(user_input, gpt_response):
     messages = load_conversation().get('messages', [])
@@ -78,4 +81,4 @@ def reset_conversation():
 
 reset_conversation()
 
-conversation_state = load_conversation()
+get_last_gpt_response()

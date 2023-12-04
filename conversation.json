@@ -1,1 +1,1 @@
-{"messages": [{"role": "system", "content": "You are an assistant providing help with recipes"}, {"role": "user", "content": "What can you help me with today?"}, {"role": "user", "content": "hi, testing the gpt functionality"}, {"role": "assistant", "content": "Hello! I'm here to assist you. How can I help you with GPT functionality?"}]}
+{"messages": [{"role": "system", "content": "You are an assistant providing help with recipes"}, {"role": "user", "content": "What can you help me with today?"}]}

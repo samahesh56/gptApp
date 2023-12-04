@@ -1,5 +1,6 @@
 import json
 from openai import OpenAI
+import tkinter as tk
 
 client = OpenAI()
 
@@ -9,6 +10,21 @@ DEFAULT_CONVERSATION = {
         {"role": "user", "content": "What can you help me with today?"}
     ]
 }
+
+def send_message(user_input, conversation_text_widget):
+    last_conversation = get_last_gpt_response()
+    prompt = f"{user_input}\n{last_conversation}"
+
+    # Call the chat_gpt function or any other relevant logic
+    gpt_response = chat_gpt(prompt)
+
+    # Update the conversation state
+    update_conversation_state(user_input, gpt_response)
+
+    # Display the conversation in the text widget
+    conversation_text_widget.insert(tk.END, f"User: {user_input}\n")
+    conversation_text_widget.insert(tk.END, f"GPT: {gpt_response}\n\n")
+    conversation_text_widget.see(tk.END)
 
 def chat_gpt(prompt, model="gpt-3.5-turbo"):
     messages = [

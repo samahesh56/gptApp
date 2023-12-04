@@ -12,7 +12,7 @@ DEFAULT_CONVERSATION = {
 
 def chat_gpt(prompt, model="gpt-3.5-turbo"):
     messages = [
-        {"role": "system", "content": "You are an assistant providing help with recipes"},
+        {"role": "system", "content": "You are an assistant providing help with any issues. "},
         {"role": "user", "content": prompt}
     ]
     response = client.chat.completions.create(

@@ -83,6 +83,4 @@ def reset_conversation():
     # Save the updated state
     save_conversation(messages)
 
-reset_conversation()
-
 get_last_gpt_response()

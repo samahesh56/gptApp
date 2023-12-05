@@ -1,5 +1,5 @@
 import tkinter as tk
-from conversation import send_message, reset_conversation
+from conversation import send_message, reset_conversation, load_conversation
 
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs): #*args allows for more inputs into the frame, **kwargs for dictionary value/pairs. 
@@ -9,11 +9,14 @@ class Main(tk.Frame):
         self.user_input_entry = tk.Entry(self, width=80) # User-input 
         self.user_input_entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5) # "packs" input into parent frame
 
+        self.load_button = tk.Button(self, text="Load", command=self.on_load_button_click)
+        self.load_button.pack(expand=True, padx=5, pady=5)
+
         send_button = tk.Button(self, text="Send", command=self.on_send_button_click) #send button initiates call 
         send_button.pack(side=tk.RIGHT, padx=5, pady=5) # "packs" send button in frame 
 
         self.reset_button = tk.Button(self, text="Reset Conversation", command=self.on_reset_button_click)
-        self.reset_button.pack(expand=True, fill="both")
+        self.reset_button.pack(expand=True, padx=5, pady=5)
 
         # Main conversation text widget
         self.conversation_text = tk.Text(self.parent, state='normal', wrap=tk.WORD) 
@@ -28,6 +31,18 @@ class Main(tk.Frame):
     def on_reset_button_click(self):
         reset_conversation()
         self.conversation_text.delete("1.0", tk.END)
+
+    def on_load_button_click(self):
+        conversation = load_conversation()
+
+        messages = conversation.get('messages', [])
+
+        self.conversation_text.delete(1.0, tk.END)
+
+        for message in messages:
+            role = message["role"]
+            content = message["content"]
+            self.conversation_text.insert(tk.END, f"{role.capitalize()}: {content}\n")
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -1,10 +1,12 @@
 import tkinter as tk
-from conversation import send_message, reset_conversation, load_conversation
+from conversation import ConversationLogic
 
 class Main(tk.Frame):
     def __init__(self, parent, *args, **kwargs): #*args allows for more inputs into the frame, **kwargs for dictionary value/pairs. 
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent # Instantiates frame to parent widget  
+
+        self.conversational_logic = ConversationLogic()
         
         self.user_input_entry = tk.Entry(self, width=80) # User-input 
         self.user_input_entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5) # "packs" input into parent frame
@@ -23,17 +25,21 @@ class Main(tk.Frame):
         self.conversation_text.pack(padx=5, pady=5, fill=tk.BOTH, expand=True) # packs the textbox frame 
 
     def on_send_button_click(self):
-        user_input = self.user_input_entry.get() # gets the user input 
-        self.user_input_entry.delete(0, tk.END) # deletes the entry in the box 
+        user_input = self.user_input_entry.get()
+        self.user_input_entry.delete(0, tk.END)
+        gpt_response = self.conversational_logic.send_message(user_input)
+        self.conversational_logic.update_conversation_state(user_input, gpt_response)
 
-        send_message(user_input, self.conversation_text) #conversation_text is gpt response it takes in (the base prompt)
+        self.conversation_text.insert(tk.END, f"User: {user_input}\n")
+        self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
+        self.conversation_text.see(tk.END)
 
     def on_reset_button_click(self):
-        reset_conversation()
+        self.conversational_logic.reset_conversation()
         self.conversation_text.delete("1.0", tk.END)
 
     def on_load_button_click(self):
-        conversation = load_conversation()
+        conversation = self.conversational_logic.load_conversation()
 
         messages = conversation.get('messages', [])
 

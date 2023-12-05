@@ -6,7 +6,7 @@ class Main(tk.Frame):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent # Instantiates frame to parent widget  
 
-        self.conversational_logic = ConversationLogic()
+        self.conversational_logic = ConversationLogic() #Creates an instance of ConversationLogic functions
         
         self.user_input_entry = tk.Entry(self, width=80) # User-input 
         self.user_input_entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5) # "packs" input into parent frame
@@ -25,11 +25,10 @@ class Main(tk.Frame):
         self.conversation_text.pack(padx=5, pady=5, fill=tk.BOTH, expand=True) # packs the textbox frame 
 
     def on_send_button_click(self):
-        user_input = self.user_input_entry.get()
-        self.user_input_entry.delete(0, tk.END)
-        gpt_response = self.conversational_logic.send_message(user_input)
-        self.conversational_logic.update_conversation_state(user_input, gpt_response)
-
+        user_input = self.user_input_entry.get() # takes in the user input 
+        self.user_input_entry.delete(0, tk.END) 
+        gpt_response = self.conversational_logic.send_message(user_input) # calls send_message() function to receive gpt response
+        
         self.conversation_text.insert(tk.END, f"User: {user_input}\n")
         self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
         self.conversation_text.see(tk.END)

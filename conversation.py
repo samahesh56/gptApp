@@ -6,10 +6,11 @@ class ConversationLogic:
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods 
 
     def chat_gpt(self, user_input, model, max_tokens=100):
+        ''' 
         conversation_state = self.load_conversation()
         messages = conversation_state.get('messages', [])
 
-        # Truncate conversation history if it exceeds max_tokens
+        Truncate conversation history if it exceeds max_tokens
         total_tokens = 0
         truncated_messages = []
 
@@ -27,6 +28,7 @@ class ConversationLogic:
 
         # Use the truncated conversation history
         messages = truncated_messages
+        ''' 
 
         last_conversation = self.get_last_gpt_response() # loads the last response, appends to the user input for the basic prompt
         prompt = f"{user_input}\n{last_conversation}"
@@ -35,8 +37,10 @@ class ConversationLogic:
         #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
 
         
-        messages.append({"role": "system", "content": "You are an assistant providing help with any issues. "})
-        messages.append({"role": "user", "content": prompt })
+        messages = [
+        {"role": "system", "content": "You are an assistant providing help with any issues. "},
+        {"role": "user", "content": prompt }
+    ]
 
         response = self.client.chat.completions.create( 
             model=model,

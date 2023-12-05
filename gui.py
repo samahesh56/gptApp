@@ -27,8 +27,8 @@ class Main(tk.Frame):
     def on_send_button_click(self):
         user_input = self.user_input_entry.get() # takes in the user input 
         self.user_input_entry.delete(0, tk.END) 
-        gpt_response = self.conversational_logic.send_message(user_input) # calls send_message() function to receive gpt response
-        
+        gpt_response = self.conversational_logic.chat_gpt(user_input, model="gpt-3.5-turbo-1106") #calls GPT model, returns response. Change model here.
+
         self.conversation_text.insert(tk.END, f"User: {user_input}\n")
         self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
         self.conversation_text.see(tk.END)

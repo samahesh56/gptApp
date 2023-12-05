@@ -5,16 +5,10 @@ class ConversationLogic:
     def __init__(self):
         self.client = OpenAI()
 
-    def send_message(self, user_input):
+    def chat_gpt(self, user_input, model):
         last_conversation = self.get_last_gpt_response()
         prompt = f"{user_input}\n{last_conversation}"
 
-        gpt_response = self.chat_gpt(prompt, model="gpt-3.5-turbo-1106")
-        self.update_conversation_state(user_input, gpt_response)
-
-        return gpt_response
-
-    def chat_gpt(self, prompt, model):
         #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
         #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
 
@@ -28,6 +22,9 @@ class ConversationLogic:
         )
 
         response = response.choices[0].message.content
+
+        self.update_conversation_state(user_input, response)
+
         return response
 
     def get_last_gpt_response(self):
@@ -79,4 +76,4 @@ class ConversationLogic:
         # Save the updated state
         self.save_conversation(messages)
 
-ConversationLogic().reset_conversation()
+#ConversationLogic().reset_conversation()

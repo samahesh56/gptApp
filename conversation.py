@@ -1,4 +1,4 @@
-import json, tiktoken, time
+import json, tiktoken
 from openai import OpenAI
 
 class ConversationLogic:
@@ -13,8 +13,7 @@ class ConversationLogic:
         conversation_state = self.load_conversation()
         messages = conversation_state.get('messages', [])
 
-
-        #Truncate conversation history if it exceeds max_tokens
+         #Truncate conversation history if it exceeds max_tokens
         #total_tokens = 0
         #truncated_messages = []
     
@@ -25,18 +24,21 @@ class ConversationLogic:
 
         #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
         #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
+ 
+        max_tokens = 1000 - 50
+
+        truncated_messages = self.trim_conversation_history(messages, max_tokens)
+
+        messages = truncated_messages
+ 
         messages.append({"role": "system", "content": self.system_message})
         messages.append({"role": "user", "content": user_input })
 
-        start_time = time.time()
         response = self.client.chat.completions.create( 
             model=model,
             messages=messages,
+            max_tokens=max_tokens,
         )
-
-        end_time = time.time()
-        response_time = end_time - start_time
-        print(f"{response_time}")
 
         total_tokens_used = response.usage.total_tokens
 
@@ -117,3 +119,19 @@ class ConversationLogic:
             raise NotImplementedError(f"""count_tokens_in_messages() is not presently implemented for model {model}.
     See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens.""")
         
+    def trim_conversation_history(self, messages, total_tokens_used):
+        # Truncate or omit parts of the conversation to fit within max_tokens
+        total_tokens = 0
+        truncated_messages = []
+
+        for message in reversed(messages):
+            # Include system and user messages
+            if message["role"] in ["system", "user"]:
+                total_tokens += self.count_tokens_in_messages([message], model=self.model)
+
+                if total_tokens <= total_tokens_used:
+                    truncated_messages.insert(0, message)
+                else:
+                    break
+
+        return truncated_messages

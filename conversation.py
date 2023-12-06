@@ -1,9 +1,12 @@
-import json, tiktoken
+import json, tiktoken, time
 from openai import OpenAI
 
 class ConversationLogic:
-    def __init__(self):
+    def __init__(self, model='gpt-3.5-turbo-1106'):
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods
+        self.model = model 
+        self.system_message = "You are an assistant providing help with any issues."
+        self.user_message = "What can you help me with today?"
 
 
     def chat_gpt(self, user_input, model, max_tokens=1000, max_messages=4):
@@ -17,22 +20,26 @@ class ConversationLogic:
     
         #Use the truncated conversation history
         #messages = truncated_messages
-
-        prompt = f"{user_input}"
         
         #last_conversation = self.get_last_gpt_response() # loads the last response, appends to the user input for the basic prompt
 
         #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
         #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
-        messages.append({"role": "system", "content": "You are an assistant providing help with any issues."})
-        messages.append({"role": "user", "content": prompt })
+        messages.append({"role": "system", "content": self.system_message})
+        messages.append({"role": "user", "content": user_input })
 
+        start_time = time.time()
         response = self.client.chat.completions.create( 
             model=model,
             messages=messages,
         )
 
+        end_time = time.time()
+        response_time = end_time - start_time
+        print(f"{response_time}")
+
         total_tokens_used = response.usage.total_tokens
+
         print(f"Total tokens used for this call: {total_tokens_used}")
 
         response = response.choices[0].message.content
@@ -81,12 +88,10 @@ class ConversationLogic:
 
     def reset_conversation(self):
         # Update the conversation state with the default messages
-        system_message = "You are an assistant providing help with any issues." # Edit this as the main prompt 
-        user_message = "What can you help me with today?" # Edit this as the main prompt response 
         messages = [
             
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message}
+            {"role": "system", "content": self.system_message},
+            {"role": "user", "content": self.user_message}
         ]
 
         # Save the updated state
@@ -112,47 +117,3 @@ class ConversationLogic:
             raise NotImplementedError(f"""count_tokens_in_messages() is not presently implemented for model {model}.
     See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens.""")
         
-    def calculate_token_costs(self, token_counts, model_type):
-        """
-        Calculate the costs associated with the tokens used in a program.
-
-        Parameters:
-        token_counts (list): The counts of tokens used for each API call.
-        model_type (str): The type of GPT model used, can be 'gpt-3.5', 'gpt-4.5-turbo', or 'gpt-4'.
-
-        Returns:
-        float: The total cost of the conversation.
-        """
-        
-        # Total token count for the conversation
-        total_tokens = sum(token_counts)
-        
-        # Pricing per 1000 tokens for different models
-        pricing = {
-            'gpt-3.5': {'input': 0.0010, 'output': 0.0020},
-            'gpt-4.5-turbo': {'input': 0.01, 'output': 0.03},
-            'gpt-4': {'input': 0.03, 'output': 0.06}
-        }
-        
-        # Check if provided model_type is valid
-        if model_type not in pricing:
-            raise ValueError("Invalid model_type provided. Please use 'gpt-3.5', 'gpt-4.5-turbo', or 'gpt-4'.")
-        
-        # Calculate costs for both input and output
-        input_cost_per_1000 = pricing[model_type]['input']
-        output_cost_per_1000 = pricing[model_type]['output']
-
-        # Calculate the total cost based on input/output
-        total_cost = (total_tokens / 1000) * (input_cost_per_1000 + output_cost_per_1000)
-        
-        return total_cost
-
-    def test_token_costs(self, token_counts, model_type):
-        # Use this method for testing the token cost calculation
-        total_cost = self.calculate_token_costs(token_counts, model_type)
-        print(f"Total cost of the conversation: ${total_cost:.4f}")
-
-if __name__ == "__main__":
-    logic = ConversationLogic()
-    logic.test_token_costs([57, 79, 274, 296, 329], 'gpt-3.5')
-

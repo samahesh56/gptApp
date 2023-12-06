@@ -1,13 +1,14 @@
-import json
+import json, tiktoken
 from openai import OpenAI
 
 class ConversationLogic:
     def __init__(self):
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods 
 
-    def chat_gpt(self, user_input, model):
+    def chat_gpt(self, user_input, model, max_tokens=1000, max_messages=4):
         conversation_state = self.load_conversation()
         messages = conversation_state.get('messages', [])
+
 
         #Truncate conversation history if it exceeds max_tokens
         #total_tokens = 0
@@ -29,6 +30,9 @@ class ConversationLogic:
             model=model,
             messages=messages,
         )
+
+        total_tokens_used = response.usage.total_tokens
+        print(f"Total tokens used for this call: {total_tokens_used}")
 
         response = response.choices[0].message.content
 
@@ -86,3 +90,23 @@ class ConversationLogic:
 
         # Save the updated state
         self.save_conversation(messages)
+
+    def count_tokens_in_messages(self, messages, model="gpt-3.5-turbo-1106"):
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            encoding = tiktoken.get_encoding("cl100k_base")
+
+        if model == "gpt-3.5-turbo-1106":
+            num_tokens = 0
+            for message in messages:
+                num_tokens += 4  # Every message follows <im_start>{role/name}\n{content}<im_end>\n
+                for key, value in message.items():
+                    num_tokens += len(encoding.encode(value))
+                    if key == "name":  # If there's a name, the role is omitted
+                        num_tokens += -1  # Role is always required and always 1 token
+            num_tokens += 2  # Every reply is primed with <im_start>assistant
+            return num_tokens
+        else:
+            raise NotImplementedError(f"""count_tokens_in_messages() is not presently implemented for model {model}.
+    See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens.""")

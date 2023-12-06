@@ -48,6 +48,9 @@ class ConversationLogic:
 
         self.update_conversation_state(user_input, response)
 
+        tiktoken_use = self.count_tokens_in_messages(messages)
+        print(f"Total Tiktokens: {tiktoken_use}")
+
         return response
 
     def get_last_gpt_response(self):

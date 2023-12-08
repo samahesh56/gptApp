@@ -2,16 +2,19 @@ import json, tiktoken
 from openai import OpenAI
 
 class ConversationLogic:
-    def __init__(self, model='gpt-3.5-turbo-1106'):
+    def __init__(self, model='gpt-3.5-turbo-1106', max_tokens=200):
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods
         self.model = model 
         self.system_message = "You are an assistant providing help with any issues."
         self.user_message = "What can you help me with today?"
+        self.max_tokens = max_tokens
 
 
-    def chat_gpt(self, user_input, model, max_tokens=200):
+    def chat_gpt(self, user_input, model, max_tokens):
         conversation_state = self.load_conversation()
         messages = conversation_state.get('messages', [])
+
+        self.trim_conversation_history(messages, max_tokens)
 
          #Truncate conversation history if it exceeds max_tokens
         #total_tokens = 0
@@ -43,14 +46,12 @@ class ConversationLogic:
         response = response.choices[0].message.content
 
 
-        self.update_conversation_state(user_input, response)
+        #self.update_conversation_state(user_input, response)
 
         tiktoken_use = self.count_tokens_in_messages(messages)
         print(f"Total Tiktokens: {tiktoken_use}")
 
-        trunacted_messages = self.trim_conversation_history(messages, max_tokens)
-
-        self.save_conversation(trunacted_messages)
+        self.update_conversation_state(user_input, response)
 
         return response
 

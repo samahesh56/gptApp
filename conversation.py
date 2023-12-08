@@ -13,20 +13,14 @@ class ConversationLogic:
         conversation_state = self.load_conversation()
         messages = conversation_state.get('messages', [])
 
-         #Truncate conversation history if it exceeds max_tokens
-        #total_tokens = 0
-        #truncated_messages = []
-    
-        #Use the truncated conversation history
-        #messages = truncated_messages
-        
-        #last_conversation = self.get_last_gpt_response() # loads the last response, appends to the user input for the basic prompt
+        new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}], model=self.model)
+        remaining_tokens = max_tokens - new_input_tokens
 
         #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
         #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
- 
-        max_tokens = max_tokens-50
- 
+
+        messages = self.trim_conversation_history(messages, remaining_tokens)
+
         messages.append({"role": "system", "content": self.system_message})
         messages.append({"role": "user", "content": user_input })
 
@@ -45,12 +39,12 @@ class ConversationLogic:
 
         self.update_conversation_state(user_input, response)
 
-        tiktoken_use = self.count_tokens_in_messages(messages)
+        tiktoken_use = self.count_tokens_in_messages(messages, model)
         print(f"Total Tiktokens: {tiktoken_use}")
 
-        trunacted_messages = self.trim_conversation_history(messages, max_tokens)
+        #trunacted_messages = self.trim_conversation_history(messages, max_tokens)
 
-        self.save_conversation(trunacted_messages)
+        #self.save_conversation(trunacted_messages)
 
         return response
 
@@ -103,7 +97,7 @@ class ConversationLogic:
         # Save the updated state
         self.save_conversation(messages)
 
-    def count_tokens_in_messages(self, messages, model="gpt-3.5-turbo-1106"):
+    def count_tokens_in_messages(self, messages, model):
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
@@ -123,19 +117,17 @@ class ConversationLogic:
             raise NotImplementedError(f"""count_tokens_in_messages() is not presently implemented for model {model}.
     See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens.""")
         
-    def trim_conversation_history(self, messages, total_tokens_used):
+    def trim_conversation_history(self, messages, remaining_tokens):
         # Truncate or omit parts of the conversation to fit within max_tokens
-        total_tokens = 0
+        tokens_used = 0
         truncated_messages = []
-
+ 
         for message in reversed(messages):
-            # Include system and user messages
-            if message["role"] in ["system", "user"]:
-                total_tokens += self.count_tokens_in_messages([message], model=self.model)
-
-                if total_tokens <= total_tokens_used:
-                    truncated_messages.insert(0, message)
-                else:
-                    break
+            message_tokens = self.count_tokens_in_messages([message], model=self.model)
+            if tokens_used + message_tokens <= remaining_tokens: # this calculated if the token count from the end of the conversation until the remaining token_ limit is reached
+                truncated_messages.insert(0, message)
+                tokens_used += message_tokens
+            else:
+                break # stops adding messages if the next message were to exceed the token limit 
 
         return truncated_messages

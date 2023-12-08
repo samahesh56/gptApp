@@ -24,10 +24,12 @@ class Main(tk.Frame):
         self.conversation_text = tk.Text(self.parent, state='normal', wrap=tk.WORD) 
         self.conversation_text.pack(padx=5, pady=5, fill=tk.BOTH, expand=True) # packs the textbox frame 
 
+        self.on_load_button_click()
+
     def on_send_button_click(self):
         user_input = self.user_input_entry.get() # takes in the user input 
         self.user_input_entry.delete(0, tk.END) 
-        gpt_response = self.conversational_logic.chat_gpt(user_input, model="gpt-3.5-turbo-1106") #calls GPT model, returns response. Change model here.
+        gpt_response = self.conversational_logic.chat_gpt(user_input, model=self.conversational_logic.model) #calls GPT model, returns response. Change model here.
 
         self.conversation_text.insert(tk.END, f"User: {user_input}\n")
         self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
@@ -44,7 +46,7 @@ class Main(tk.Frame):
 
         self.conversation_text.delete(1.0, tk.END)
 
-        for message in messages:
+        for message in messages[2:]:
             role = message["role"]
             content = message["content"]
             self.conversation_text.insert(tk.END, f"{role.capitalize()}: {content}\n")

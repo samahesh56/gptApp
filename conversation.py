@@ -1,55 +1,56 @@
-import json
+import json, tiktoken
 from openai import OpenAI
 
 class ConversationLogic:
-    def __init__(self):
-        self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods 
+    def __init__(self, model='gpt-3.5-turbo-1106'):
+        self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods
+        self.model = model 
+        self.system_message = "You are an assistant providing help with any issues."
+        self.user_message = "What can you help me with today?"
 
-    def chat_gpt(self, user_input, model, max_tokens=100):
-        ''' 
+
+    def chat_gpt(self, user_input, model, max_tokens=200):
         conversation_state = self.load_conversation()
         messages = conversation_state.get('messages', [])
 
-        Truncate conversation history if it exceeds max_tokens
-        total_tokens = 0
-        truncated_messages = []
-
-        for message in reversed(messages):
-            # Calculate the tokens in the message
-            role_tokens = len(message["role"]) + 2  # role + ": "
-            content_tokens = len(message["content"].split())
-            total_tokens += role_tokens + content_tokens
-
-            # Check if adding this message exceeds the limit
-            if total_tokens > max_tokens:
-                break
-
-            truncated_messages.insert(0, message)
-
-        # Use the truncated conversation history
-        messages = truncated_messages
-        ''' 
-
-        last_conversation = self.get_last_gpt_response() # loads the last response, appends to the user input for the basic prompt
-        prompt = f"{user_input}\n{last_conversation}"
+         #Truncate conversation history if it exceeds max_tokens
+        #total_tokens = 0
+        #truncated_messages = []
+    
+        #Use the truncated conversation history
+        #messages = truncated_messages
+        
+        #last_conversation = self.get_last_gpt_response() # loads the last response, appends to the user input for the basic prompt
 
         #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
         #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
-
-        
-        messages = [
-        {"role": "system", "content": "You are an assistant providing help with any issues. "},
-        {"role": "user", "content": prompt }
-    ]
+ 
+        max_tokens = max_tokens-50
+ 
+        messages.append({"role": "system", "content": self.system_message})
+        messages.append({"role": "user", "content": user_input })
 
         response = self.client.chat.completions.create( 
             model=model,
             messages=messages,
+            max_tokens=max_tokens,
         )
+
+        total_tokens_used = response.usage.total_tokens
+
+        print(f"Total tokens used for this call: {total_tokens_used}")
 
         response = response.choices[0].message.content
 
+
         self.update_conversation_state(user_input, response)
+
+        tiktoken_use = self.count_tokens_in_messages(messages)
+        print(f"Total Tiktokens: {tiktoken_use}")
+
+        trunacted_messages = self.trim_conversation_history(messages, max_tokens)
+
+        self.save_conversation(trunacted_messages)
 
         return response
 
@@ -87,17 +88,54 @@ class ConversationLogic:
         messages.append({"role": "user", "content": user_input})
         messages.append({"role": "assistant", "content": gpt_response})
 
+
         # Save the updated state
         self.save_conversation(messages)
 
     def reset_conversation(self):
         # Update the conversation state with the default messages
-        system_message = "You are an assistant providing help with any issues." # Edit this as the main prompt 
-        user_message = "What can you help me with today?" # Edit this as the main prompt response 
         messages = [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message}
+            
+            {"role": "system", "content": self.system_message},
+            {"role": "user", "content": self.user_message}
         ]
 
         # Save the updated state
         self.save_conversation(messages)
+
+    def count_tokens_in_messages(self, messages, model="gpt-3.5-turbo-1106"):
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            encoding = tiktoken.get_encoding("cl100k_base")
+
+        if model == "gpt-3.5-turbo-1106":
+            num_tokens = 0
+            for message in messages:
+                num_tokens += 4  # Every message follows <im_start>{role/name}\n{content}<im_end>\n
+                for key, value in message.items():
+                    num_tokens += len(encoding.encode(value))
+                    if key == "name":  # If there's a name, the role is omitted
+                        num_tokens += -1  # Role is always required and always 1 token
+            num_tokens += 2  # Every reply is primed with <im_start>assistant
+            return num_tokens
+        else:
+            raise NotImplementedError(f"""count_tokens_in_messages() is not presently implemented for model {model}.
+    See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens.""")
+        
+    def trim_conversation_history(self, messages, total_tokens_used):
+        # Truncate or omit parts of the conversation to fit within max_tokens
+        total_tokens = 0
+        truncated_messages = []
+
+        for message in reversed(messages):
+            # Include system and user messages
+            if message["role"] in ["system", "user"]:
+                total_tokens += self.count_tokens_in_messages([message], model=self.model)
+
+                if total_tokens <= total_tokens_used:
+                    truncated_messages.insert(0, message)
+                else:
+                    break
+
+        return truncated_messages

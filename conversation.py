@@ -10,43 +10,39 @@ class ConversationLogic:
 
 
     def chat_gpt(self, user_input, model, max_tokens=200):
-        conversation_state = self.load_conversation()
-        messages = conversation_state.get('messages', [])
+        conversation_state = self.load_conversation() # loads the current conversation
+        messages = conversation_state.get('messages', []) # gets the conversation from json file
 
-        new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}], model=self.model)
-        remaining_tokens = max_tokens - new_input_tokens
+        new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}], model=self.model) # calculates the ~amount of input tokens prior to the API call
+        remaining_tokens = max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the power of the api call is reduced at an equal amount of tokens to help reduce the size of incoming responses slightly. 
 
         #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
         #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
 
-        messages = self.trim_conversation_history(messages, remaining_tokens)
+        messages = self.trim_conversation_history(messages, remaining_tokens) # Performs the conversation truncation, sends in conversation and the tokens left to use. This new message holds what the api call can handle, and omits the oldest message according to the tokens allowed
 
-        messages.append({"role": "system", "content": self.system_message})
-        messages.append({"role": "user", "content": user_input })
+        messages.append({"role": "system", "content": self.system_message}) # appends system behavior to the conversation call
+        messages.append({"role": "user", "content": user_input }) # appends the newest message to the conversation (messages)
 
-        response = self.client.chat.completions.create( 
-            model=model,
-            messages=messages,
-            max_tokens=max_tokens,
+        response = self.client.chat.completions.create( #this is the client call to chatGPT
+            model=model, #inputs model type 
+            messages=messages, # inputs the conversation details
+            max_tokens=max_tokens, # a "limiter" that helps truncate conversations
         )
 
-        total_tokens_used = response.usage.total_tokens
+        total_tokens_used = response.usage.total_tokens # calculates total tokens used in api call using chatgpt call for total tokens 
 
         print(f"Total tokens used for this call: {total_tokens_used}")
 
-        response = response.choices[0].message.content
+        response = response.choices[0].message.content # this is the API call to get the latest gpt response 
 
 
-        self.update_conversation_state(user_input, response)
+        self.update_conversation_state(user_input, response) # updates the conversation with the latest input and response 
 
-        tiktoken_use = self.count_tokens_in_messages(messages, model)
-        print(f"Total Tiktokens: {tiktoken_use}")
+        #tiktoken_use = self.count_tokens_in_messages(messages, model)
+        #print(f"Total Tiktokens: {tiktoken_use}")
 
-        #trunacted_messages = self.trim_conversation_history(messages, max_tokens)
-
-        #self.save_conversation(trunacted_messages)
-
-        return response
+        return response # returns the gpt repsonse 
 
     def get_last_gpt_response(self):
         conversation_state = self.load_conversation() # loads the latest conversation, which is read as the latest dictionary key/value pairs (.json file)
@@ -119,14 +115,14 @@ class ConversationLogic:
         
     def trim_conversation_history(self, messages, remaining_tokens):
         # Truncate or omit parts of the conversation to fit within max_tokens
-        tokens_used = 0
-        truncated_messages = []
+        tokens_used = 0 # initial token amount
+        truncated_messages = [] # new list to hold conversation 
  
-        for message in reversed(messages):
-            message_tokens = self.count_tokens_in_messages([message], model=self.model)
-            if tokens_used + message_tokens <= remaining_tokens: # this calculated if the token count from the end of the conversation until the remaining token_ limit is reached
-                truncated_messages.insert(0, message)
-                tokens_used += message_tokens
+        for message in reversed(messages): # REVERSES order of reading messages, looking at the newest information in the conversation first. (appends newest -> oldest in the conversation)
+            message_tokens = self.count_tokens_in_messages([message], model=self.model) # calculates the current ~amount of tokens in the current message, using the model type (different amount of token costs)
+            if tokens_used + message_tokens <= remaining_tokens: # if the tokens used (tokens in the conversation that accumulate during the loop) + the amount of the current message is less than the max_tokens allowed by the api call, that message is added to this conversation
+                truncated_messages.insert(0, message) #inserts the newest message to the new conversation list 
+                tokens_used += message_tokens # increases the tokens used (in the conversation) per message added to the list (Reversed)
             else:
                 break # stops adding messages if the next message were to exceed the token limit 
 

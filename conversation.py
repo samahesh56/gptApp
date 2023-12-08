@@ -9,7 +9,7 @@ class ConversationLogic:
         self.user_message = "What can you help me with today?"
 
 
-    def chat_gpt(self, user_input, model, max_tokens=1000, max_messages=4):
+    def chat_gpt(self, user_input, model, max_tokens=200):
         conversation_state = self.load_conversation()
         messages = conversation_state.get('messages', [])
 
@@ -25,11 +25,7 @@ class ConversationLogic:
         #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
         #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
  
-        max_tokens = 1000 - 50
-
-        truncated_messages = self.trim_conversation_history(messages, max_tokens)
-
-        messages = truncated_messages
+        max_tokens = max_tokens-50
  
         messages.append({"role": "system", "content": self.system_message})
         messages.append({"role": "user", "content": user_input })
@@ -46,10 +42,15 @@ class ConversationLogic:
 
         response = response.choices[0].message.content
 
+
         self.update_conversation_state(user_input, response)
 
         tiktoken_use = self.count_tokens_in_messages(messages)
         print(f"Total Tiktokens: {tiktoken_use}")
+
+        trunacted_messages = self.trim_conversation_history(messages, max_tokens)
+
+        self.save_conversation(trunacted_messages)
 
         return response
 

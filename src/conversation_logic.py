@@ -1,5 +1,6 @@
 import json, tiktoken
 from openai import OpenAI
+from models import Message 
 
 class ConversationLogic:
     def __init__(self, model='gpt-3.5-turbo-1106'):
@@ -9,7 +10,7 @@ class ConversationLogic:
         self.user_message = "What can you help me with today?"
 
 
-    def chat_gpt(self, user_input, model, max_tokens=200):
+    def chat_gpt(self, user_input, model, max_tokens=500):
         conversation_state = self.load_conversation() # loads the current conversation
         messages = conversation_state.get('messages', []) # gets the conversation from json file
 
@@ -57,7 +58,7 @@ class ConversationLogic:
 
     def load_conversation(self):
         try:
-            with open('conversation.json', 'r') as file: # opens conversation.json file, reads it 
+            with open('data\conversation.json', 'r') as file: # opens conversation.json file, reads it 
                 return json.load(file) # returns JSON, the dictionary structure which holds the conversation details 
             # Attempts to read the conversaition.json file
             # Loads this content as a JSON object, which is a key/value pair
@@ -68,7 +69,7 @@ class ConversationLogic:
             return {"messages": []}
         
     def save_conversation(self, messages):
-        with open('conversation.json', 'w') as file:
+        with open('data\conversation.json', 'w') as file:
             json.dump({"messages": messages}, file)
 
     def update_conversation_state(self, user_input, gpt_response):

@@ -1,12 +1,12 @@
 import tkinter as tk
-from conversation import ConversationLogic
+from conversation_logic import ConversationLogic
 
 class Main(tk.Frame):
-    def __init__(self, parent, *args, **kwargs): #*args allows for more inputs into the frame, **kwargs for dictionary value/pairs. 
+    def __init__(self, parent, conversation_logic, *args, **kwargs): #*args allows for more inputs into the frame, **kwargs for dictionary value/pairs. 
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent # Instantiates frame to parent widget  
 
-        self.conversational_logic = ConversationLogic() #Creates an instance of ConversationLogic functions
+        self.conversational_logic = conversation_logic #Creates an instance of ConversationLogic functions
         
         self.user_input_entry = tk.Entry(self, width=80) # User-input 
         self.user_input_entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5) # "packs" input into parent frame

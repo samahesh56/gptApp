@@ -3,7 +3,7 @@ from openai import OpenAI
 from models import Message 
 
 class ConversationLogic:
-    def __init__(self, config_path='config.json'):
+    def __init__(self, config_path='configs.json'):
         self.config=self.load_config(config_path)
         self.conversation_file_path = self.config.get('conversation_file_path', os.path.join('data', 'conversation.json'))
 
@@ -106,7 +106,7 @@ class ConversationLogic:
         except KeyError:
             encoding = tiktoken.get_encoding("cl100k_base")
 
-        if model == model:
+        if model == "gpt-4-1106-preview":
             num_tokens = 0
             for message in messages:
                 num_tokens += 4  # Every message follows <im_start>{role/name}\n{content}<im_end>\n

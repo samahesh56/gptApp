@@ -1,16 +1,20 @@
-import json, tiktoken
+import json, tiktoken, os 
 from openai import OpenAI
 from models import Message 
 
 class ConversationLogic:
-    def __init__(self, model='gpt-4-1106-preview'):
+    def __init__(self, config_path='config.json'):
+        self.config=self.load_config(config_path)
+        self.conversation_file_path = self.config.get('conversation_file_path', os.path.join('data', 'conversation.json'))
+
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods
-        self.model = model 
-        self.system_message = "You are an assistant providing help with any issues."
-        self.user_message = "What can you help me with today?"
+        self.model = self.config.get('model', 'gpt-3.5-turbo-1106') 
+        self.system_message = self.config.get('system_message', 'You are an assistant providing help with any issues.') 
+        self.user_message = self.config.get('user_message','What can you help me with today?' ) 
+        self.max_tokens = self.config.get('max_tokens', 750)
 
 
-    def chat_gpt(self, user_input, model, max_tokens=750):
+    def chat_gpt(self, user_input, model, max_tokens):
         conversation_state = self.load_conversation() # loads the current conversation
         messages = conversation_state.get('messages', []) # gets the conversation from json file
 
@@ -102,7 +106,7 @@ class ConversationLogic:
         except KeyError:
             encoding = tiktoken.get_encoding("cl100k_base")
 
-        if model == "gpt-4-1106-preview":
+        if model == model:
             num_tokens = 0
             for message in messages:
                 num_tokens += 4  # Every message follows <im_start>{role/name}\n{content}<im_end>\n
@@ -130,3 +134,12 @@ class ConversationLogic:
                 break # stops adding messages if the next message were to exceed the token limit 
 
         return truncated_messages
+    
+    def load_config(self, config_path):
+        try:
+            with open(config_path, 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            print(f"Config file not found. Using defailt configs")
+            return {}
+                

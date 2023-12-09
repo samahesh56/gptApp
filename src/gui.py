@@ -29,7 +29,7 @@ class Main(tk.Frame):
     def on_send_button_click(self):
         user_input = self.user_input_entry.get() # takes in the user input 
         self.user_input_entry.delete(0, tk.END) 
-        gpt_response = self.conversational_logic.chat_gpt(user_input, model=self.conversational_logic.model) # performs the API call (chat gpt function call, class conversation_logic)
+        gpt_response = self.conversational_logic.chat_gpt(user_input, model=self.conversational_logic.model, max_tokens=self.conversational_logic.max_tokens) # performs the API call (chat gpt function call, class conversation_logic)
 
         self.conversation_text.insert(tk.END, f"User: {user_input}\n")
         self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")

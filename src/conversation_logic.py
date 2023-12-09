@@ -3,14 +3,14 @@ from openai import OpenAI
 from models import Message 
 
 class ConversationLogic:
-    def __init__(self, model='gpt-3.5-turbo-1106'):
+    def __init__(self, model='gpt-4-1106-preview'):
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods
         self.model = model 
         self.system_message = "You are an assistant providing help with any issues."
         self.user_message = "What can you help me with today?"
 
 
-    def chat_gpt(self, user_input, model, max_tokens=500):
+    def chat_gpt(self, user_input, model, max_tokens=750):
         conversation_state = self.load_conversation() # loads the current conversation
         messages = conversation_state.get('messages', []) # gets the conversation from json file
 
@@ -32,8 +32,10 @@ class ConversationLogic:
         )
 
         total_tokens_used = response.usage.total_tokens # calculates total tokens used in api call using chatgpt call for total tokens 
+        input_tokens = response.usage.prompt_tokens
+        response_tokens = response.usage.completion_tokens
 
-        print(f"Total tokens used for this call: {total_tokens_used}")
+        print(f"Total tokens used for this call: {total_tokens_used} Total Input: {input_tokens} Total Reponse: {response_tokens}")
 
         response = response.choices[0].message.content # this is the API call to get the latest gpt response 
 
@@ -100,7 +102,7 @@ class ConversationLogic:
         except KeyError:
             encoding = tiktoken.get_encoding("cl100k_base")
 
-        if model == "gpt-3.5-turbo-1106":
+        if model == "gpt-4-1106-preview":
             num_tokens = 0
             for message in messages:
                 num_tokens += 4  # Every message follows <im_start>{role/name}\n{content}<im_end>\n

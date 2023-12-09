@@ -1,11 +1,14 @@
 import json, tiktoken, os 
 from openai import OpenAI
-from models import Message 
+from models import Message #Not working currently, import fix in the future 
 
 class ConversationLogic:
-    def __init__(self, config_path='configs.json'):
+    def __init__(self, config_path='configs.json', file_to_load=None):
         self.config=self.load_config(config_path)
         self.conversation_file_path = self.config.get('conversation_file_path', os.path.join('data', 'conversation.json'))
+        
+        if file_to_load:
+            self.conversation_file_path = file_to_load
 
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods
         self.model = self.config.get('model', 'gpt-3.5-turbo-1106') 
@@ -62,20 +65,28 @@ class ConversationLogic:
         
         return "" # returns "" if no gpt-response is found. 
 
-    def load_conversation(self):
+    def load_conversation(self, filename=None):
+        if filename is None:
+            filename = self.conversation_file_path
+
         try:
-            with open('data\conversation.json', 'r') as file: # opens conversation.json file, reads it 
-                return json.load(file) # returns JSON, the dictionary structure which holds the conversation details 
+            with open(filename, 'r') as file:
+                loaded_conversation = json.load(file)
+                if filename != self.conversation_file_path:
+                    self.conversation_file_path = filename  # Update the conversation_file_path if a different file is loaded
+                return loaded_conversation
             # Attempts to read the conversaition.json file
             # Loads this content as a JSON object, which is a key/value pair
             # messages is the list of messages in the conversation like this: [messages: {"role": ~, "content":, ~}, {}, etc]
             # the messages hold the API model references (role, content) that contribute to prompt phrasing. 
             # prompt is read in the JSON file, assigning either user/assistant pairs to be interpreted by the GPT
         except FileNotFoundError:
-            return {"messages": []}
+            print(f"Conversation file not found. Creating a new one.")
+            self.reset_conversation()
+            return {"messages": []}  # Return an empty conversation if the file is not found
         
-    def save_conversation(self, messages):
-        with open('data\conversation.json', 'w') as file:
+    def save_conversation_to_file(self, filename, messages):
+        with open(filename, 'w') as file:
             json.dump({"messages": messages}, file)
 
     def update_conversation_state(self, user_input, gpt_response):
@@ -87,7 +98,7 @@ class ConversationLogic:
 
 
         # Save the updated state
-        self.save_conversation(messages)
+        self.save_conversation_to_file(self.conversation_file_path, messages)
 
     def reset_conversation(self):
         # Update the conversation state with the default messages
@@ -96,9 +107,8 @@ class ConversationLogic:
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": self.user_message}
         ]
-
         # Save the updated state
-        self.save_conversation(messages)
+        self.save_conversation_to_file(self.conversation_file_path, messages)
 
     def count_tokens_in_messages(self, messages, model):
         try:
@@ -106,7 +116,7 @@ class ConversationLogic:
         except KeyError:
             encoding = tiktoken.get_encoding("cl100k_base")
 
-        if model == "gpt-4-1106-preview":
+        if model == "gpt-3.5-turbo-1106":
             num_tokens = 0
             for message in messages:
                 num_tokens += 4  # Every message follows <im_start>{role/name}\n{content}<im_end>\n

@@ -1,0 +1,8 @@
+{
+    "model": "gpt-3.5-turbo-1106",
+    "max_tokens": 750,
+    "system_message": "You are an assistant providing help for any task, utilizing context for the best responses",
+    "user_message": "What can you help me with today?",
+    "assistant_message": "Hi there! How can I help you today?",
+    "conversation_file_path": "data/conversation.json"
+  }

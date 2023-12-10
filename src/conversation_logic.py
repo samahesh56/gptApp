@@ -5,7 +5,8 @@ from models import Message #Not working currently, import fix in the future
 class ConversationLogic:
     def __init__(self, config_path='configs.json'):
         self.config=self.load_config(config_path)
-        self.conversation_file_path = self.config.get('conversation_file_path', os.path.join('data', 'conversation.json')) # conversation_file_path connects the current file path to the main conversation file.
+        relative_path = self.config.get('conversation_file_path', 'data/conversation.json')
+        self.conversation_file_path = os.path.abspath(relative_path)
 
         # These are general values. The config files overrwrites the general values, if they are different. 
         self.filename=self.config.get('conversation_file_path', 'data/conversation.json') # sets the filename for the main prompt 
@@ -70,6 +71,7 @@ class ConversationLogic:
             filename = self.filename
 
         try:
+            filename = os.path.abspath(filename)  # Convert to absolute path
             with open(filename, 'r') as file:
                 loaded_conversation = json.load(file)
                 if filename != self.conversation_file_path:
@@ -83,9 +85,10 @@ class ConversationLogic:
         except FileNotFoundError:
             print(f"Conversation file not found. Creating a new one.")
             self.reset_conversation()
-            return {"messages": []}  # Return an empty conversation if the file is not found
+            #return {"messages": []}  # Return an empty conversation if the file is not found
         
     def save_conversation_to_file(self, filename, messages):
+        filename = os.path.abspath(filename)  # Convert to absolute path    
         with open(filename, 'w') as file:
             json.dump({"messages": messages}, file)
 
@@ -102,8 +105,7 @@ class ConversationLogic:
 
     def reset_conversation(self):
         # Update the conversation state with the default messages
-        messages = [
-            
+        messages = [ 
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": self.user_message},
             {"role": "assistant", "content": self.assistant_message}
@@ -151,6 +153,7 @@ class ConversationLogic:
             with open(config_path, 'r') as file:
                 return json.load(file)
         except FileNotFoundError:
-            print(f"Config file not found. Using defailt configs")
-            return {}
+            print(f"Config file not found. Using default configs")
+
+            
                 

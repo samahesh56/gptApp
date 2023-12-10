@@ -8,7 +8,7 @@ class ConversationLogic:
         self.conversation_file_path = self.config.get('conversation_file_path', os.path.join('data', 'conversation.json')) # conversation_file_path connects the current file path to the main conversation file.
 
         # These are general values. The config files overrwrites the general values, if they are different. 
-        self.filename=self.config.get('conversation_file_path', 'data/conversation.py') # sets the filename for the main prompt 
+        self.filename=self.config.get('conversation_file_path', 'data/conversation.json') # sets the filename for the main prompt 
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods
         self.model = self.config.get('model', 'gpt-3.5-turbo-1106') 
         self.system_message = self.config.get('system_message', 'You are an assistant providing help with any issues.') 

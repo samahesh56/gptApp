@@ -7,15 +7,21 @@ class Main(tk.Frame): # Packs the program in a tkinter frame
         super().__init__(parent, **kwargs) 
         self.parent = parent # Instantiates frame to parent widget  
         self.conversational_logic = conversation_logic #Creates an instance of ConversationLogic functions
+        self.filename = "data/conversation.json" #
         self.init_gui() # initializes gui functions 
+
+        if self.filename:
+            self.conversational_logic.load_conversation()
+            self.update_conversation_text()
 
 
     def init_gui(self):
-
+        # Menu Bar
         menu_bar = tk.Menu(self.parent) # a Tkinter Menu holds a dropdown of contents for ease of access. Pass the parent root (self.parent) heree
         self.parent.config(menu=menu_bar) # assigns the menu bar to the parent window(root). This sets the menu bar to the tkinter window.
  
-        file_menu = tk.Menu(menu_bar, tearoff=0) # Creates a 
+        # File bAr 
+        file_menu = tk.Menu(menu_bar, tearoff=0) 
         file_menu.add_command(label="New Conversation", command=self.new_conversation)
         file_menu.add_command(label="Open Conversation", command=self.load_conversation)
         file_menu.add_command(label="Save As...", command=self.save_conversation)
@@ -52,13 +58,13 @@ class Main(tk.Frame): # Packs the program in a tkinter frame
         self.conversational_logic.reset_conversation() # reset function call
         self.conversation_text.delete("1.0", tk.END)
 
-    def update_conversation_text(self, filename):
+    def update_conversation_text(self, filename=None):
         conversation = self.conversational_logic.load_conversation(filename)  # Modify this based on your ConversationLogic class
         messages = conversation.get('messages', [])
 
         self.conversation_text.delete(1.0, tk.END)
 
-        for message in messages[1:]:  # Assuming you want to skip the system and user messages
+        for message in messages[2:]:  # Assuming you want to skip the system and user messages
             role = message["role"]
             content = message["content"]
             self.conversation_text.insert(tk.END, f"{role.capitalize()}: {content}\n")
@@ -68,12 +74,13 @@ class Main(tk.Frame): # Packs the program in a tkinter frame
         # Implement the logic for creating a new conversation in ConversationLogic
 
     def load_conversation(self):
-        filename = filedialog.askopenfilename(
+        filename = filedialog.askopenfilename( 
             initialdir="data/conversation",
             title="Open Conversation",
             filetypes=(("JSON files", "*.json"), ("All files", "*.*"))
         )
         if filename:
+            self.conversational_logic.filename = filename
             self.conversational_logic.load_conversation(filename)
             self.update_conversation_text(filename)
 

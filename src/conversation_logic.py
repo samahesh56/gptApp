@@ -5,8 +5,10 @@ from models import Message #Not working currently, import fix in the future
 class ConversationLogic:
     def __init__(self, config_path='configs.json'):
         self.config=self.load_config(config_path)
-        self.conversation_file_path = self.config.get('conversation_file_path', os.path.join('data', 'conversation.json'))
+        self.conversation_file_path = self.config.get('conversation_file_path', os.path.join('data', 'conversation.json')) # conversation_file_path connects the current file path to the main conversation file.
 
+        # These are general values. The config files overrwrites the general values, if they are different. 
+        self.filename=self.config.get('conversation_file_path', 'data/conversation.py') # sets the filename for the main prompt 
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods
         self.model = self.config.get('model', 'gpt-3.5-turbo-1106') 
         self.system_message = self.config.get('system_message', 'You are an assistant providing help with any issues.') 
@@ -63,7 +65,9 @@ class ConversationLogic:
         
         return "" # returns "" if no gpt-response is found. 
 
-    def load_conversation(self, filename):
+    def load_conversation(self, filename=None):
+        if filename is None:
+            filename = self.filename
 
         try:
             with open(filename, 'r') as file:
@@ -94,7 +98,7 @@ class ConversationLogic:
 
 
         # Save the updated state
-        self.save_conversation_to_file(self.conversation_file_path, messages)
+        self.save_conversation_to_file(self.filename, messages)
 
     def reset_conversation(self):
         # Update the conversation state with the default messages
@@ -105,7 +109,7 @@ class ConversationLogic:
             {"role": "assistant", "content": self.assistant_message}
         ]
         # Save the updated state
-        self.save_conversation_to_file(self.conversation_file_path, messages)
+        self.save_conversation_to_file(self.filename, messages)
 
     def count_tokens_in_messages(self, messages, model):
         try:

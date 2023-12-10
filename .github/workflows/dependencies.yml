@@ -1,9 +1,7 @@
 name: Update Dependency Graph
 
 on:
-  push:
-    branches:
-      - main
+    workflow_dispatch:
 
 jobs:
   update-deps:

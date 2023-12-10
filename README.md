@@ -1,6 +1,5 @@
 # An api-based ChatGPT App
 
-## Overview
 The ChatGPT App is a tool that allows users to interact with OpenAI's GPT language models through a simple and convenient Python interface. 
 This script enables developers to integrate the newest and latest chatgpt models, while efficiently utilizing api costs. 
 

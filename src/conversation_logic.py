@@ -3,12 +3,9 @@ from openai import OpenAI
 from models import Message #Not working currently, import fix in the future 
 
 class ConversationLogic:
-    def __init__(self, config_path='configs.json', file_to_load=None):
+    def __init__(self, config_path='configs.json'):
         self.config=self.load_config(config_path)
         self.conversation_file_path = self.config.get('conversation_file_path', os.path.join('data', 'conversation.json'))
-        
-        if file_to_load:
-            self.conversation_file_path = file_to_load
 
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods
         self.model = self.config.get('model', 'gpt-3.5-turbo-1106') 
@@ -116,7 +113,7 @@ class ConversationLogic:
         except KeyError:
             encoding = tiktoken.get_encoding("cl100k_base")
 
-        if model == "gpt-3.5-turbo-1106":
+        if model == model:
             num_tokens = 0
             for message in messages:
                 num_tokens += 4  # Every message follows <im_start>{role/name}\n{content}<im_end>\n

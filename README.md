@@ -12,11 +12,16 @@ This script enables developers to integrate the newest models while efficiently 
 ## Getting Started
 To get started with the this app, follow these steps:
 1. Clone the repository via GitHub Desktop, or by forking this repository. 
-1. Install the required Python dependencies
-    - Ensure you have all dependancies by typing 'pip install -r requirements.txt
-3. Set up your enviroment and peronsal config settings
-    - Create a new .env file in the main directory. Utilize the .env_example, and replace 'YOUR_API_KEY_HERE' with your API key, and save changes.
-    - Create a new configs.json file in the main directory. Utilize the configs_example.json file, and make changes as necessary. 
+1. Install the required Python dependenciess
+    - Ensure you have all dependancies by typing `pip install -r requirements.txt`
+3. Set up your environment and personal config settings
+    - Create a new `.env` file in the main directory. Utilize the .env_example, and replace 'YOUR_API_KEY_HERE' with your API key, and save changes.
+    - Create a new `configs.json` file in the main directory. Utilize the configs_example.json file, and make changes as necessary.
+    - Ensure these are named correctly.
 5. Begin using the script using main.py, gui.py, or type 'python main.py' in the terminal.
+
+## Contributions
+In order to contribute and create changes, create a new branch off of `main`, and name it appropriately for your desired implementation.
+Once you are satisfied with your changes, create a Pull Request from your branch into main.
 
 

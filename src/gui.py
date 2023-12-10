@@ -29,21 +29,28 @@ class Main(tk.Frame): # Packs the program in a tkinter frame
         file_menu.add_command(label="Exit", command=self.exit_application)
         menu_bar.add_cascade(label="File", menu=file_menu)
 
-        self.toolbar = tk.Frame(self.parent, bd=1, relief=tk.RAISED, bg="grey")
-        self.toolbar.pack(side=tk.TOP, fill=tk.X)
+        # Main conversation text widget
+        self.scrollbar = tk.Scrollbar(self.parent, orient=tk.VERTICAL)
+        self.conversation_text = tk.Text(self.parent, state='normal', wrap=tk.WORD, yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.conversation_text.yview)
+
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.conversation_text.pack(padx=5, pady=5, fill=tk.BOTH, expand=True)
+    
         
-        self.user_input_entry = tk.Entry(self, width=80) # User-input 
+        # Toolbar that holds user input, reset button, and send button. 
+        self.toolbar = tk.Frame(self.parent, bd=1, bg="grey")
+        self.toolbar.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        self.user_input_entry = tk.Entry(self.toolbar, width=80) # User-input 
         self.user_input_entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5) # "packs" input into parent frame
 
-        send_button = tk.Button(self, text="Send", command=self.on_send_button_click) #send button initiates call 
+        send_button = tk.Button(self.toolbar, text="Send", command=self.on_send_button_click) #send button initiates call 
         send_button.pack(side=tk.RIGHT, padx=5, pady=5) # "packs" send button in frame 
 
-        self.reset_button = tk.Button(self, text="Reset Conversation", command=self.on_reset_button_click)
-        self.reset_button.pack(expand=True, padx=5, pady=5)
+        self.reset_button = tk.Button(self.toolbar, text="Reset Conversation", command=self.on_reset_button_click)
+        self.reset_button.pack(fill=tk.X, padx=5, pady=5)
 
-        # Main conversation text widget
-        self.conversation_text = tk.Text(self.parent, state='normal', wrap=tk.WORD) 
-        self.conversation_text.pack(padx=5, pady=5, fill=tk.BOTH, expand=True) # packs the textbox frame 
 
     def on_send_button_click(self):
         user_input = self.user_input_entry.get() # takes in the user input 
@@ -108,8 +115,8 @@ class Main(tk.Frame): # Packs the program in a tkinter frame
 if __name__ == "__main__": #main start method 
     root = tk.Tk()
     root.title("GPT App") # set the name of the app
-    root.geometry('800x600') # sets size of the window 
-    conversation_logic = ConversationLogic(file_to_load="data/conversation.json")
+    #root.geometry('800x600') # sets size of the window 
+    conversation_logic = ConversationLogic()
 
     Main(root, conversation_logic).pack(side="top", fill="both", expand=True)
     root.mainloop()

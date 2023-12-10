@@ -10,7 +10,8 @@ class ConversationLogic:
         self.client = OpenAI() # allows OpenAI instance "self.client" to run, allowing OpenAI Methods
         self.model = self.config.get('model', 'gpt-3.5-turbo-1106') 
         self.system_message = self.config.get('system_message', 'You are an assistant providing help with any issues.') 
-        self.user_message = self.config.get('user_message','What can you help me with today?' ) 
+        self.user_message = self.config.get('user_message','What can you help me with today?') 
+        self.assistant_message = self.config.get('assistant_message', 'Hi, how can I help you today?')
         self.max_tokens = self.config.get('max_tokens', 750)
 
 
@@ -62,9 +63,7 @@ class ConversationLogic:
         
         return "" # returns "" if no gpt-response is found. 
 
-    def load_conversation(self, filename=None):
-        if filename is None:
-            filename = self.conversation_file_path
+    def load_conversation(self, filename):
 
         try:
             with open(filename, 'r') as file:
@@ -102,7 +101,8 @@ class ConversationLogic:
         messages = [
             
             {"role": "system", "content": self.system_message},
-            {"role": "user", "content": self.user_message}
+            {"role": "user", "content": self.user_message},
+            {"role": "assistant", "content": self.assistant_message}
         ]
         # Save the updated state
         self.save_conversation_to_file(self.conversation_file_path, messages)

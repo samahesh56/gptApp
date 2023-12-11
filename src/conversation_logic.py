@@ -16,14 +16,13 @@ class ConversationLogic:
         self.assistant_message = self.config.get('assistant_message', 'Hi, how can I help you today?')
         self.max_tokens = self.config.get('max_tokens', 750)
 
-
     def chat_gpt(self, user_input, model, max_tokens):
         conversation_state = self.load_conversation() # loads the current conversation
         messages = conversation_state.get('messages', []) # gets the conversation from json file
 
         new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}], model=self.model) # calculates the ~amount of input tokens prior to the API call
         remaining_tokens = max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the power of the api call is reduced at an equal amount of tokens to help reduce the size of incoming responses slightly. 
-
+        print(f"calculated input tokens: {new_input_tokens} calculateed remaining tokens: {remaining_tokens}")
         #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
         #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
 
@@ -104,7 +103,7 @@ class ConversationLogic:
         # Update the conversation state with the default messages
         messages = [
             
-            {"role": "system", "content": self.system_message},
+            {"role": "system", "content": self.system_message}, # CHANGE THIS TO A DEFAULT MESSAGE (otherwise config changes will change this system message)
             {"role": "user", "content": self.user_message},
             {"role": "assistant", "content": self.assistant_message}
         ]

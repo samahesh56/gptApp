@@ -106,7 +106,7 @@ class ConversationLogic:
         except KeyError:
             encoding = tiktoken.get_encoding("cl100k_base")
 
-        if model == "gpt-4-1106-preview":
+        if model == model:
             num_tokens = 0
             for message in messages:
                 num_tokens += 4  # Every message follows <im_start>{role/name}\n{content}<im_end>\n

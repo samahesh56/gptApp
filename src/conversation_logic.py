@@ -64,27 +64,26 @@ class ConversationLogic:
         
         return "" # returns "" if no gpt-response is found. 
 
-    def load_conversation(self, filename=None):
+    def load_conversation(self, filename=None): # Attempts to load the given file 
         if filename is None:
-            filename = self.filename
+            filename = self.filename # if there is no file found, it is given the configured path. In this case, its data\conversation
 
         try:
-            with open(filename, 'r') as file:
-                loaded_conversation = json.load(file)
-                if filename != self.conversation_file_path:
+            with open(filename, 'r') as file: # tries to open the given file 
+                loaded_conversation = json.load(file) # loads the contents of given file 
+                if filename != self.conversation_file_path: # if the given file path (conversation) does not match the current file path, a new file path is created.
                     self.conversation_file_path = filename  # Update the conversation_file_path if a different file is loaded
-                return loaded_conversation
+                return loaded_conversation # returns the given conversation of the file 
             # Attempts to read the conversaition.json file
             # Loads this content as a JSON object, which is a key/value pair
             # messages is the list of messages in the conversation like this: [messages: {"role": ~, "content":, ~}, {}, etc]
             # the messages hold the API model references (role, content) that contribute to prompt phrasing. 
             # prompt is read in the JSON file, assigning either user/assistant pairs to be interpreted by the GPT
-        except FileNotFoundError:
+        except FileNotFoundError: # if it cannot find the given file, it creates a new conversation.json file for the user. 
             print(f"Conversation file not found. Creating a new one.")
-            self.reset_conversation()
-            return {"messages": []}  # Return an empty conversation if the file is not found
+            self.reset_conversation() # Resets the conversation to default settings 
         
-    def save_conversation_to_file(self, filename, messages):
+    def save_conversation_to_file(self, filename, messages): # Writes a conversation to save it, according to the given filename. Saves to data/. 
         with open(filename, 'w') as file:
             json.dump({"messages": messages}, file)
 
@@ -101,8 +100,7 @@ class ConversationLogic:
 
     def reset_conversation(self):
         # Update the conversation state with the default messages
-        messages = [
-            
+        messages = [        
             {"role": "system", "content": self.system_message}, # CHANGE THIS TO A DEFAULT MESSAGE (otherwise config changes will change this system message)
             {"role": "user", "content": self.user_message},
             {"role": "assistant", "content": self.assistant_message}
@@ -150,6 +148,13 @@ class ConversationLogic:
             with open(config_path, 'r') as file:
                 return json.load(file)
         except FileNotFoundError:
-            print(f"Config file not found. Using defailt configs")
-            return {}
+            print(f"Config file not found. Using default configs")
+            return {
+                "model": "gpt-3.5-turbo-1106",
+                "max_tokens": 500,
+                "system_message": "You are an assistant providing help for any task, utilizing context for the best responses",
+                "user_message": "What can you help me with today?",
+                "assistant_message": "Hi there! How can I help you today?",
+                "conversation_file_path": "data/conversation.json"
+                }
                 

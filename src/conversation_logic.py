@@ -20,9 +20,10 @@ class ConversationLogic:
         conversation_state = self.load_conversation() # loads the current conversation
         messages = conversation_state.get('messages', []) # gets the conversation from json file
 
+
         new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}], model=self.model) # calculates the ~amount of input tokens prior to the API call
-        remaining_tokens = max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the power of the api call is reduced at an equal amount of tokens to help reduce the size of incoming responses slightly. 
-        print(f"calculated input tokens: {new_input_tokens} calculateed remaining tokens: {remaining_tokens}")
+        remaining_tokens = max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the power of the api call is reduced at an equal amount of tokens to help reduce the size of incoming responses. 
+        print(f"~ input tokens: {new_input_tokens} ~ remaining tokens: {remaining_tokens}\n Current Model:{self.model}")
         #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
         #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
 
@@ -157,4 +158,12 @@ class ConversationLogic:
                 "assistant_message": "Hi there! How can I help you today?",
                 "conversation_file_path": "data/conversation.json"
                 }
+        
+    def update_settings(self, new_settings):
+        self.model = new_settings.get('model', self.model)
+        self.max_tokens = new_settings.get('max_tokens', self.max_tokens)
+        self.system_message = new_settings.get('system_message', self.system_message)
+        self.user_message = new_settings.get('user_message', self.user_message)
+        self.assistant_message = new_settings.get('assistant_message', self.assistant_message)
+        # Update other settings as needed
                 

@@ -1,5 +1,5 @@
-import tkinter as tk
-from tkinter import filedialog, messagebox
+import json, tkinter as tk
+from tkinter import filedialog, messagebox, ttk
 from conversation_logic import ConversationLogic
 
 class Main(tk.Frame): # Packs the program in a tkinter frame 
@@ -19,15 +19,19 @@ class Main(tk.Frame): # Packs the program in a tkinter frame
         # Menu Bar
         menu_bar = tk.Menu(self.parent) # a Tkinter Menu holds a dropdown of contents for ease of access. Pass the parent root (self.parent) heree
         self.parent.config(menu=menu_bar) # assigns the menu bar to the parent window(root). This sets the menu bar to the tkinter window.
- 
-        # File bAr 
+
+        # File bar 
         file_menu = tk.Menu(menu_bar, tearoff=0) 
         file_menu.add_command(label="New Conversation", command=self.new_conversation)
         file_menu.add_command(label="Open Conversation", command=self.load_conversation)
         file_menu.add_command(label="Save As...", command=self.save_conversation)
         file_menu.add_separator()
+        file_menu.add_command(label="Settings", command=self.open_settings_menu)
         file_menu.add_command(label="Exit", command=self.exit_application)
         menu_bar.add_cascade(label="File", menu=file_menu)
+
+        # Settings Menu 
+        menu_bar.add_command(label="ChatGPT Settings", command=self.open_settings_menu)
 
         # Main conversation text widget
         self.scrollbar = tk.Scrollbar(self.parent, orient=tk.VERTICAL)
@@ -105,6 +109,55 @@ class Main(tk.Frame): # Packs the program in a tkinter frame
             current_messages = self.conversational_logic.load_conversation().get('messages', [])
             self.conversational_logic.save_conversation_to_file(filename, current_messages)
             messagebox.showinfo("Save", "The conversation has been saved.")
+
+    def open_settings_menu(self):
+        settings_window = tk.Toplevel(self.parent)
+        settings_window.title('Settings')
+
+        configs = self.conversational_logic.config
+        
+        # Example setting: Model selection
+        tk.Label(settings_window, text='Model:').grid(row=0, column=0)
+        model_var = tk.StringVar()
+        model_select = ttk.Combobox(settings_window, textvariable=model_var)
+        model_select['values'] = ('gpt-3.5-turbo', 'gpt-4-1106-preview', 'gpt-4')  # List your models here
+        model_select.grid(row=0, column=1)
+        model_var.set(configs.get('model'))
+
+        # Max Tokens
+        tk.Label(settings_window, text='Max Tokens:').grid(row=1, column=0)
+        max_tokens_var = tk.IntVar()
+        max_tokens_entry = tk.Entry(settings_window, textvariable=max_tokens_var)
+        max_tokens_entry.grid(row=1, column=1)
+        max_tokens_var.set(configs.get('max_tokens'))  # Set current max tokens
+
+        # System Message
+        tk.Label(settings_window, text='System Message:').grid(row=2, column=0)
+        system_message_var = tk.StringVar()
+        system_message_entry = tk.Entry(settings_window, textvariable=system_message_var)
+        system_message_entry.grid(row=2, column=1)
+        system_message_var.set(configs.get('system_message', ''))  # Set current system message
+
+         # Function to update config on 'apply'
+        def update_config():
+            configs['model'] = model_var.get()
+            configs['max_tokens'] = max_tokens_var.get()
+            configs['system_message'] = system_message_var.get()
+
+            # ... Update other settings here
+
+            # Save back to configs.json
+            with open('configs.json', 'w') as f:
+                json.dump(configs, f)
+
+            self.conversational_logic.update_settings(configs)
+
+            #settings_window.destroy()  Enable this if you want to close the settings menu after apply is pressed. Otherwise, add a pop-up or notification that says "Settings Changed"
+
+        # Apply button
+        apply_button = tk.Button(settings_window, text='Apply', command=update_config)
+        apply_button.grid(row=4, column=0, columnspan=2, pady=10)
+
 
     def exit_application(self):
         # Save if needed, then exit

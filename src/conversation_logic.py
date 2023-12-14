@@ -3,8 +3,10 @@ from openai import OpenAI
 from models import Message #Not working currently, import fix in the future 
 
 class ConversationLogic:
-    def __init__(self, config_path='configs.json'):
-        self.config=self.load_config(config_path)
+    def __init__(self):
+        self.config_path='configs.json' # change config path as needed
+        self.createfiles()
+        self.config=self.load_config(self.config_path)
         self.conversation_file_path = self.config.get('conversation_file_path', os.path.join('data', 'conversation.json')) # conversation_file_path connects the current file path to the main conversation file.
 
         # These are general values. The config files overrwrites the general values, if they are different. 
@@ -145,9 +147,9 @@ class ConversationLogic:
         return truncated_messages
     
     def load_config(self, config_path): # loads the configs 
-        try:
-            with open(config_path, 'r') as file:
-                return json.load(file)
+        with open(config_path, 'r') as file:
+            return json.load(file)
+        '''
         except FileNotFoundError:
             print(f"Config file not found. Using default configs")
             default_config = {
@@ -161,6 +163,7 @@ class ConversationLogic:
             with open(config_path, 'w') as file:
                 json.dump(default_config, file)
             return default_config
+        '''
         
     def update_settings(self, new_settings):
         self.model = new_settings.get('model', self.model)
@@ -169,4 +172,22 @@ class ConversationLogic:
         self.user_message = new_settings.get('user_message', self.user_message)
         self.assistant_message = new_settings.get('assistant_message', self.assistant_message)
         # Update other settings as needed
-                
+
+    def createfiles(self):
+        default_config = {
+            "model": "gpt-3.5-turbo-1106",
+            "max_tokens": 500,
+            "system_message": "You are an assistant providing help for any task, utilizing context for the best responses",
+            "user_message": "What can you help me with today?",
+            "assistant_message": "Hi there! How can I help you today?",
+            "conversation_file_path": "data/conversation.json"
+            }
+        
+        default_dotenv = "OPENAI_API_KEY=YOUR_API_KEY_HERE"
+
+        with open(self.config_path, 'w') as file:
+            json.dump(default_config, file)
+
+        with open('.env', 'w') as envfile:
+            envfile.write(default_dotenv)
+

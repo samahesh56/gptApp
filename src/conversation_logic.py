@@ -144,13 +144,13 @@ class ConversationLogic:
 
         return truncated_messages
     
-    def load_config(self, config_path):
+    def load_config(self, config_path): # loads the configs 
         try:
             with open(config_path, 'r') as file:
                 return json.load(file)
         except FileNotFoundError:
             print(f"Config file not found. Using default configs")
-            return {
+            default_config = {
                 "model": "gpt-3.5-turbo-1106",
                 "max_tokens": 500,
                 "system_message": "You are an assistant providing help for any task, utilizing context for the best responses",
@@ -158,6 +158,9 @@ class ConversationLogic:
                 "assistant_message": "Hi there! How can I help you today?",
                 "conversation_file_path": "data/conversation.json"
                 }
+            with open(config_path, 'w') as file:
+                json.dump(default_config, file)
+            return default_config
         
     def update_settings(self, new_settings):
         self.model = new_settings.get('model', self.model)

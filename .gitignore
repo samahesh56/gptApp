@@ -1,3 +1,4 @@
 .env
 configs.json
 **/__pycache__/
+venv/

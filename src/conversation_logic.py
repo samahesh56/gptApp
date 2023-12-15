@@ -1,16 +1,15 @@
 import json, tiktoken, os 
 from openai import OpenAI
 from models import Message #Not working currently, import fix in the future 
-from dotenv import load_dotenv
 
 class ConversationLogic:
     def __init__(self):
         self.config_path='configs.json' # change config path as needed
-        self.createfiles()
-        load_dotenv()
-        self.client = OpenAI()
-        self.config=self.load_config(self.config_path)
-        self.conversation_file_path = self.config.get(
+        self.createfiles() # creates .env and .configs file for the user's first launch 
+        self.config=self.load_config(self.config_path) # load current config settings 
+        self.api_key=self.config.get('OPENAI_API_KEY', 'YOUR_DEFAULT_API_KEY_HERE')
+        self.client = OpenAI(api_key=self.api_key) # starts an instance of OpenAI's client 
+        self.conversation_file_path = self.config.get( 
             'conversation_file_path', os.path.join('data', 'conversation.json')
             ) # conversation_file_path connects the current file path to the main conversation file.
 
@@ -184,18 +183,12 @@ class ConversationLogic:
             "system_message": "You are an assistant providing help for any task, utilizing context for the best responses",
             "user_message": "What can you help me with today?",
             "assistant_message": "Hi there! How can I help you today?",
-            "conversation_file_path": "data/conversation.json"
+            "conversation_file_path": "data/conversation.json",
+            "OPENAI_API_KEY": "YOUR_API_KEY_HERE",
             }
 
         if not os.path.exists(self.config_path):
             with open(self.config_path, 'w') as file:
                 json.dump(default_config, file)
                 print(f"Config file created: {self.config_path}")
-
-        # Check if the .env file already exists
-        if not os.path.exists('.env'):
-            default_dotenv = "OPENAI_API_KEY=YOUR_API_KEY_HERE"
-            with open('.env', 'w') as envfile:
-                envfile.write(default_dotenv)
-                print(".env file created")
 

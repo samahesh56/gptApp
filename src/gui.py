@@ -59,11 +59,20 @@ class Main(tk.Frame): # Packs the program in a tkinter frame
     def on_send_button_click(self):
         user_input = self.user_input_entry.get() # takes in the user input 
         self.user_input_entry.delete(0, tk.END) 
-        gpt_response = self.conversational_logic.chat_gpt(user_input, model=self.conversational_logic.model, max_tokens=self.conversational_logic.max_tokens) # performs the API call (chat gpt function call, class conversation_logic)
-
-        self.conversation_text.insert(tk.END, f"User: {user_input}\n")
-        self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
-        self.conversation_text.see(tk.END)
+        gpt_response, error_response = self.conversational_logic.chat_gpt(user_input, model=self.conversational_logic.model, max_tokens=self.conversational_logic.max_tokens) # performs the API call (chat gpt function call, class conversation_logic)
+        
+        # Check if response is an error message
+        if gpt_response is not None:
+            # Updates conversation to the conversation_text field
+            self.conversation_text.insert(tk.END, f"User: {user_input}\n")
+            self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
+            self.conversation_text.see(tk.END)
+        else:
+            # Display the error message in the GUI
+            if "401" in error_response:
+                messagebox.showinfo("Authentication Error", "Invalid or expired API key. Please check your API key.")
+            
+        
 
     def on_reset_button_click(self):
         self.conversational_logic.reset_conversation() # reset function call
@@ -122,6 +131,7 @@ class Main(tk.Frame): # Packs the program in a tkinter frame
             configs['model'] = model_var.get()
             configs['max_tokens'] = max_tokens_var.get()
             configs['system_message'] = system_message_var.get()
+            configs['OPENAI_API_KEY'] = api_key_var.get()
 
             # ... Update other settings here
 
@@ -159,6 +169,12 @@ class Main(tk.Frame): # Packs the program in a tkinter frame
         system_message_entry.grid(row=2, column=1)
         system_message_var.set(configs.get('system_message'))  # Set current system message
 
+        # API key input 
+        tk.Label(settings_window, text='Your API key here:').grid(row=3, column =0)
+        api_key_var = tk.StringVar()
+        api_key_entry = tk.Entry(settings_window, textvariable=api_key_var)
+        api_key_entry.grid(row=3, column=1)
+        api_key_var.set(configs.get('OPENAI_API_KEY'))
 
     def exit_application(self):
         # Save if needed, then exit

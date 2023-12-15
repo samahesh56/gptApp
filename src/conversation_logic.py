@@ -1,5 +1,5 @@
 import json, tiktoken, os 
-from openai import OpenAI
+from openai import OpenAI, OpenAIError, AuthenticationError
 from models import Message #Not working currently, import fix in the future 
 
 class ConversationLogic:
@@ -25,7 +25,6 @@ class ConversationLogic:
         conversation_state = self.load_conversation() # loads the current conversation
         messages = conversation_state.get('messages', []) # gets the conversation from json file
 
-
         new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}], model=self.model) # calculates the ~amount of input tokens prior to the API call
         remaining_tokens = max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the power of the api call is reduced at an equal amount of tokens to help reduce the size of incoming responses. 
         print(f"~ input tokens: {new_input_tokens} ~ remaining tokens: {remaining_tokens}\n Current Model:{self.model}")
@@ -37,27 +36,30 @@ class ConversationLogic:
         messages.append({"role": "system", "content": self.system_message}) # appends system behavior to the conversation call
         messages.append({"role": "user", "content": user_input }) # appends the newest message to the conversation (messages)
 
-        response = self.client.chat.completions.create( #this is the client call to chatGPT
-            model=model, #inputs model type 
-            messages=messages, # inputs the conversation details
-            max_tokens=max_tokens, # a "limiter" that helps truncate conversations
-        )
+        try:
+            response = self.client.chat.completions.create( #this is the client call to chatGPT
+                model=model, #inputs model type 
+                messages=messages, # inputs the conversation details
+                max_tokens=max_tokens, # a "limiter" that helps truncate conversations
+            )
 
-        total_tokens_used = response.usage.total_tokens # calculates total tokens used in api call using chatgpt call for total tokens 
-        input_tokens = response.usage.prompt_tokens
-        response_tokens = response.usage.completion_tokens
+            total_tokens_used = response.usage.total_tokens # calculates total tokens used in api call using chatgpt call for total tokens 
+            input_tokens = response.usage.prompt_tokens
+            response_tokens = response.usage.completion_tokens
 
-        print(f"Total tokens used for this call: {total_tokens_used} Total Input: {input_tokens} Total Reponse: {response_tokens}")
+            print(f"Total tokens used for this call: {total_tokens_used} Total Input: {input_tokens} Total Reponse: {response_tokens}")
 
-        response = response.choices[0].message.content # this is the API call to get the latest gpt response 
+            response = response.choices[0].message.content # this is the API call to get the latest gpt response 
 
+            self.update_conversation_state(user_input, response) # updates the conversation with the latest input and response
 
-        self.update_conversation_state(user_input, response) # updates the conversation with the latest input and response 
+            return response, None # response is returned to display in gui, None is returned to signal no errors. 
+        except AuthenticationError as auth_error:
+            return None, (str(auth_error))
+        
 
-        #tiktoken_use = self.count_tokens_in_messages(messages, model)
-        #print(f"Total Tiktokens: {tiktoken_use}")
+            
 
-        return response # returns the gpt repsonse 
 
     def get_last_gpt_response(self):
         conversation_state = self.load_conversation() # loads the latest conversation, which is read as the latest dictionary key/value pairs (.json file)
@@ -174,6 +176,9 @@ class ConversationLogic:
         self.system_message = new_settings.get('system_message', self.system_message)
         self.user_message = new_settings.get('user_message', self.user_message)
         self.assistant_message = new_settings.get('assistant_message', self.assistant_message)
+        self.api_key = new_settings.get('OPENAI_API_KEY', self.api_key)
+        self.client = OpenAI(api_key=self.api_key)
+
         # Update other settings as needed
 
     def createfiles(self):

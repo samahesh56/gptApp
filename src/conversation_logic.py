@@ -1,5 +1,5 @@
 import json, tiktoken, os 
-from openai import OpenAI, OpenAIError, AuthenticationError
+from openai import OpenAI, APIConnectionError, AuthenticationError
 from models import Message #Not working currently, import fix in the future 
 
 class ConversationLogic:
@@ -21,72 +21,87 @@ class ConversationLogic:
         self.assistant_message = self.config.get('assistant_message', 'Hi, how can I help you today?')
         self.max_tokens = self.config.get('max_tokens', 750)
 
-    def chat_gpt(self, user_input, model, max_tokens):
+    def chat_gpt(self, user_input):
+        """Performs the API call, and inputs the given user input from the GUI to perform the call.
+        
+        'messages' is the root of the json conversation file. It has one key, 'messages'. 
+        messages is a list that contains dictionaries, each one represent a message in the entire conversation
+        Each message in the list is a dictionary with two key-value pairs, "role" and "content"
+            Role: specifies the role of the entity sending the message. This can either be 'system', 'user', or 'assistant' 
+            Content: specifies the context of the message given by the entity (role)
+
+        Remember that the GPT reads the length of 'messages' when trying to providing responses. Basic conversation trimming is performed to reduce the size of input calls in lengthy conversations. 
+            
+        Below is an example message '[]' held in the .json 
+            {
+                "messages": [
+                    {
+                    "role": "system",
+                    "content": "You are an assistant providing help for any task, utilizing context for the best responses"
+                    },
+                    {
+                    "role": "user",
+                    "content": "What can you help me with today?"
+                    },
+                    {
+                    "role": "assistant",
+                    "content": "Hi there! How can I help you today?"
+                    }
+                ]
+            }  
+        """
+
         conversation_state = self.load_conversation() # loads the current conversation
         messages = conversation_state.get('messages', []) # gets the conversation from json file
 
         new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}], model=self.model) # calculates the ~amount of input tokens prior to the API call
-        remaining_tokens = max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the power of the api call is reduced at an equal amount of tokens to help reduce the size of incoming responses. 
-        print(f"~ input tokens: {new_input_tokens} ~ remaining tokens: {remaining_tokens}\n Current Model:{self.model}")
-        #improved_prompt = "I am working on a gpt-API script in python. I am using the GPT model to assist me with building and debugging my code. Provide me with guidance, suggestions, and any necessary code samples to help me resolve this issue? I would appreciate detailed explanations and examples to help me understand the solution better. Thank you!"
-        #improved_prompt = "I am working on a 300-500 word essay. Provide me with guidance, suggestions, and any necessary help I require. Thank you!"
+        remaining_tokens = self.max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the conversation is truncated more harshly. This helps reduce costs slightly, at the cost of reducing early context for the GPT. 
+        print(f"\n~ input tokens: {new_input_tokens} ~ remaining tokens: {remaining_tokens}")
 
         messages = self.trim_conversation_history(messages, remaining_tokens) # Performs the conversation truncation, sends in conversation and the tokens left to use. This new message holds what the api call can handle, and omits the oldest message according to the tokens allowed
-
-        messages.append({"role": "system", "content": self.system_message}) # appends system behavior to the conversation call
         messages.append({"role": "user", "content": user_input }) # appends the newest message to the conversation (messages)
+        # IMPORTANT: Due to the trim function, chatGPT may lose context of the system message. In the future, introduce a method for checking if the system message is in the input, and reintroduce it if neceessary. 
 
         try:
-            response = self.client.chat.completions.create( #this is the client call to chatGPT
-                model=model, #inputs model type 
-                messages=messages, # inputs the conversation details
-                max_tokens=max_tokens, # a "limiter" that helps truncate conversations
+            response = self.client.chat.completions.create( # This is the client call to chatGPT
+                model=self.model, # inputs given model type 
+                messages=messages, # inputs the given conversation (truncated)
+                max_tokens=self.max_tokens, # a "limiter" that helps truncate conversations
             )
 
-            total_tokens_used = response.usage.total_tokens # calculates total tokens used in api call using chatgpt call for total tokens 
+            total_tokens_used = response.usage.total_tokens # calculates total tokens used in api call using chatgpt call for total tokens. LOG THESE FOR DEBUGGING, ETC
             input_tokens = response.usage.prompt_tokens
             response_tokens = response.usage.completion_tokens
-
-            print(f"Total tokens used for this call: {total_tokens_used} Total Input: {input_tokens} Total Reponse: {response_tokens}")
+            model_type = response.model
+            stop_reason = response.choices[0].finish_reason
+            print(f"Total tokens used for API call: {total_tokens_used} | Total Input: {input_tokens} | Total Reponse: {response_tokens}\nModel Used: {model_type} | API Stop Reason: {stop_reason}")
 
             response = response.choices[0].message.content # this is the API call to get the latest gpt response 
-
             self.update_conversation_state(user_input, response) # updates the conversation with the latest input and response
 
             return response, None # response is returned to display in gui, None is returned to signal no errors. 
         except AuthenticationError as auth_error:
             return None, (str(auth_error))
-        
-
-            
-
-
-    def get_last_gpt_response(self):
-        conversation_state = self.load_conversation() # loads the latest conversation, which is read as the latest dictionary key/value pairs (.json file)
-        messages = conversation_state.get('messages', []) # extracts the 'messages' key using get() method. defaults to [] if no keys present
-        
-        # Find the last assistant response in the conversation
-        for i in range(len(messages) - 1, -1, -1): # Iterates over the messages in reverse order, reading the latest message an index length(messages-1), incrementing by -1 to check each message's "role" value 
-            if messages[i]["role"] == "assistant": # if the role is an assistant, it is the latest gpt response, and so that content is returned 
-                return messages[i]["content"]
-        
-        return "" # returns "" if no gpt-response is found. 
+        except APIConnectionError as conn_error:
+            return None, (str(conn_error))
 
     def load_conversation(self, filename=None): # Attempts to load the given file 
+        """Attempts to read the conversaition.json file
+
+        Loads this content as a JSON object, which is a key/value pair
+        messages is the list of messages in the conversation like this: [messages: {"role": ~, "content":, ~}, {}, etc]
+        the messages hold the API model references (role, content) that contribute to prompt phrasing. 
+        prompt is read in the JSON file, assigning either user/assistant pairs to be interpreted by the GPT"""
+
         if filename is None:
             filename = self.filename # if there is no file found, it is given the configured path. In this case, its data\conversation
 
         try:
-            with open(filename, 'r') as file: # tries to open the given file 
+            with open(filename, 'r') as file: 
                 loaded_conversation = json.load(file) # loads the contents of given file 
-                if filename != self.conversation_file_path: # if the given file path (conversation) does not match the current file path, a new file path is created.
+                if filename != self.conversation_file_path: # if the given file path (conversation) does not match the current file path, a new file path is set to the filepath.
                     self.conversation_file_path = filename  # Update the conversation_file_path if a different file is loaded
                 return loaded_conversation # returns the given conversation of the file 
-            # Attempts to read the conversaition.json file
-            # Loads this content as a JSON object, which is a key/value pair
-            # messages is the list of messages in the conversation like this: [messages: {"role": ~, "content":, ~}, {}, etc]
-            # the messages hold the API model references (role, content) that contribute to prompt phrasing. 
-            # prompt is read in the JSON file, assigning either user/assistant pairs to be interpreted by the GPT
         except FileNotFoundError: # if it cannot find the given file, it creates a new conversation.json file for the user. 
             print(f"Conversation file not found. Creating a new one.")
             self.reset_conversation() # Resets the conversation to default settings 
@@ -101,7 +116,6 @@ class ConversationLogic:
         # Update with new information
         messages.append({"role": "user", "content": user_input})
         messages.append({"role": "assistant", "content": gpt_response})
-
 
         # Save the updated state
         self.save_conversation_to_file(self.filename, messages)
@@ -154,21 +168,6 @@ class ConversationLogic:
     def load_config(self, config_path): # loads the configs 
         with open(config_path, 'r') as file:
             return json.load(file)
-        '''
-        except FileNotFoundError:
-            print(f"Config file not found. Using default configs")
-            default_config = {
-                "model": "gpt-3.5-turbo-1106",
-                "max_tokens": 500,
-                "system_message": "You are an assistant providing help for any task, utilizing context for the best responses",
-                "user_message": "What can you help me with today?",
-                "assistant_message": "Hi there! How can I help you today?",
-                "conversation_file_path": "data/conversation.json"
-                }
-            with open(config_path, 'w') as file:
-                json.dump(default_config, file)
-            return default_config
-        '''
         
     def update_settings(self, new_settings):
         self.model = new_settings.get('model', self.model)

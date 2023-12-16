@@ -39,6 +39,11 @@ class ConversationLogic:
             "filename": os.path.join('data', 'conversation.json'),
             "OPENAI_API_KEY": "YOUR_API_KEY_HERE",
             }
+        
+        # Create 'data' folder if it doesn't exist
+        data_folder = 'data'
+        if not os.path.exists(data_folder):
+            os.makedirs(data_folder)
 
         if not os.path.exists(self.config_path): # Writes a new configs.json if not found. 
             with open(self.config_path, 'w') as file:

@@ -1,4 +1,4 @@
-import json, tkinter as tk
+import json, os, tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from conversation_logic import ConversationLogic
 
@@ -16,12 +16,12 @@ class Main(tk.Frame):
 
         super().__init__(parent, **kwargs) 
         self.parent = parent 
-        self.conversational_logic = conversation_logic 
-        self.filename = "data/conversation.json" 
+        self.conversation_logic = conversation_logic 
+        self.filename = os.path.join('data', 'conversation.json') # initial conversation location 
         self.init_gui()
 
         if self.filename: # loads the current conversation to the text window. (conversation.json)
-            self.conversational_logic.load_conversation()
+            self.conversation_logic.load_conversation()
             self.update_conversation_text()
 
 
@@ -70,7 +70,6 @@ class Main(tk.Frame):
         self.reset_button = tk.Button(self.toolbar, text="Reset Conversation", command=self.on_reset_button_click)
         self.reset_button.pack(fill=tk.X, padx=5, pady=5)
 
-
     def on_send_button_click(self):
         """Handles the action when the Send button is clicked.
         
@@ -78,7 +77,7 @@ class Main(tk.Frame):
 
         user_input = self.user_input_entry.get() # takes in the user input 
         self.user_input_entry.delete(0, tk.END) 
-        gpt_response, error_response = self.conversational_logic.chat_gpt(user_input) # performs the API call (chat gpt function call, class conversation_logic)
+        gpt_response, error_response = self.conversation_logic.chat_gpt(user_input) # performs the API call (chat gpt function call, class conversation_logic)
         
         # Check if response is an error message
         if gpt_response is not None:
@@ -96,13 +95,13 @@ class Main(tk.Frame):
 
         Resets the conversation in the conversation text widget (clears the conversation in the gui """
 
-        self.conversational_logic.reset_conversation() # reset function call
+        self.conversation_logic.reset_conversation() # reset function call
         self.conversation_text.delete("1.0", tk.END)
 
     def update_conversation_text(self):
         """Updates the conversation text in the GUI based on the loaded conversation from a file"""
 
-        conversation = self.conversational_logic.load_conversation(self.conversational_logic.filename)  # loads the current file (and filename) being used
+        conversation = self.conversation_logic.load_conversation(self.conversation_logic.filename)  # loads the current file (and filename) being used
         messages = conversation.get('messages', [])
 
         self.conversation_text.delete(1.0, tk.END)
@@ -128,8 +127,8 @@ class Main(tk.Frame):
             filetypes=(("JSON files", "*.json"), ("All files", "*.*")) 
         )
         if filename: 
-            self.conversational_logic.filename = filename # set the given filename to the filename in ConversationLogic() class to dynamically change filenames.
-            self.conversational_logic.load_conversation(filename) # load the given file's conversation
+            self.conversation_logic.filename = filename # set the given filename to the filename in ConversationLogic() class to dynamically change filenames.
+            self.conversation_logic.load_conversation(filename) # load the given file's conversation
             self.update_conversation_text() # display the conversation in the gui.
 
     def save_conversation(self):
@@ -144,8 +143,8 @@ class Main(tk.Frame):
             if not filename.endswith(".json"):
                 filename += ".json"
 
-            current_messages = self.conversational_logic.load_conversation().get('messages', []) # Methods used to save the conversation. Load the current conversation, and save it to file. 
-            self.conversational_logic.save_conversation_to_file(filename, current_messages)
+            current_messages = self.conversation_logic.load_conversation().get('messages', []) # Methods used to save the conversation. Load the current conversation, and save it to file. 
+            self.conversation_logic.save_conversation_to_file(filename, current_messages)
             messagebox.showinfo("Save", "The conversation has been saved.")
 
     def open_settings_menu(self):
@@ -157,7 +156,7 @@ class Main(tk.Frame):
         settings_window.geometry('400x300')
         settings_window.title('Settings') 
 
-        configs = self.conversational_logic.config # loads the current configs in the user's configs.json 
+        configs = self.conversation_logic.config # loads the current configs in the user's configs.json 
 
         # Function to update config on 'apply'
         def update_config():
@@ -172,7 +171,7 @@ class Main(tk.Frame):
             with open('configs.json', 'w') as f:
                 json.dump(configs, f)
 
-            self.conversational_logic.update_settings(configs) # updates settings in real-time
+            self.conversation_logic.update_settings(configs) # updates settings in real-time
             settings_window.destroy()  #Disable this if you want to close the settings menu open after apply is pressed. Otherwise, add an alert that says "Settings Changed"
 
         # Apply button
@@ -210,7 +209,7 @@ class Main(tk.Frame):
 
     def exit_application(self):
         # Save if needed, then exit
-        self.conversational_logic.save_conversation_to_file(self.conversational_logic.conversation_file_path, self.messages)
+        self.conversation_logic.save_conversation_to_file(self.conversation_logic.filename, self.messages)
         self.parent.quit()
 
 

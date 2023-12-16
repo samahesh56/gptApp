@@ -23,7 +23,8 @@ class Main(tk.Frame):
         if os.path.exists(self.filename):  # Check if the conversation file exists
             self.conversation_logic.load_conversation()
             self.update_conversation_text()
-
+        else:
+            print(f"Conversation file not found at {self.filename}")
 
     def init_gui(self):
         """Initializes the graphical user interface (GUI) elements

@@ -8,6 +8,7 @@ This script enables developers to integrate the newest models while efficiently 
 - Support for various use cases, including text generation, completion, conversation modeling, as well as conversation history. 
 - Customization options for fine-tuning the model's behavior and output.
 - Option to save, name, and load conversations of your choosing.
+- Options menu to change the model type, max tokens, and other variables that dynamically change API responses within the GUI.
 
 ## Getting Started/Contributing
 To get started with the this app, follow these steps:
@@ -24,7 +25,7 @@ It is extremely important to understand the basics of prompt engineering to maxi
 
 ### What is Prompt Engineering?
 Prompt engineering is the process of crafting an input message used to guide an AI model to generate the best possible response. Think of it as
-a way of providing a clear set of instrruction to the AI to best help it understand your query. 
+a way of providing a clear set of instructions to the AI to best help it understand your query. 
 
 ### The Importance of Context
 In order to receive the best responses from the AI, you must provide as much context and information to the AI as possible. This helps it
@@ -39,7 +40,7 @@ This script provides a basic "trimming" function that removes older messages tha
 api call. Take a closer look into `trim_conversation_history()` function to see how this works. This ultimately 
 helps reduce the amount of tokens used to provide the best (and most) context to the GPT while providing low-cost inputs. 
 
-Undersanding the key ideeas of prompt eengineering will help give you the best possible answers when interacting with the API model. 
-In the future, this will be more easily implemented by providing static prompts, or utilizing summation methods to reduce costs and give quality responses.
+Understanding the key ideas of prompt engineering will help give you the best possible answers when interacting with the API model. 
+In the future, this will be more easily implemented by providing static prompts, or utilizing summation methods to reduce costs and provide quality responses.
  
 

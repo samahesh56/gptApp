@@ -20,7 +20,7 @@ class Main(tk.Frame):
         self.filename = os.path.join('data', 'conversation.json') # initial conversation location 
         self.init_gui()
 
-        if self.filename: # loads the current conversation to the text window. (conversation.json)
+        if os.path.exists(self.filename):  # Check if the conversation file exists
             self.conversation_logic.load_conversation()
             self.update_conversation_text()
 
@@ -135,7 +135,7 @@ class Main(tk.Frame):
         """Opens a window to "Save As" the current conversation to a JSON file."""
 
         filename = filedialog.asksaveasfilename(
-            initialdir="data/conversation",
+            initialdir="data/",
             title="Save Conversation",
             filetypes=(("JSON files", "*.json"), ("All files", "*.*"))
         )

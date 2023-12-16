@@ -7,10 +7,10 @@ class ConversationLogic:
 
         This constructor sets up the configuration settings, the user's API key, and other requirements/tools for communication with OpenAI's GPT API. """
 
-        # creates a user-only .configs file for the user's first launch 
+        # creates a user-only .configs file and a default conversation.json file for the user. 
         self.config_path='configs.json' 
         self.createfiles() 
-        self.config=self.load_config(self.config_path) 
+        self.config=self.load_config(self.config_path) # Config is already loaded when creating files. This is here to help understand how to load configs.
 
         # starts an instance of OpenAI's API client using the api key
         self.api_key=self.config.get('OPENAI_API_KEY', 'YOUR_DEFAULT_API_KEY_HERE')
@@ -18,13 +18,42 @@ class ConversationLogic:
 
         # sets the filename given from the configs. This will initially be conversation.json in data/
         self.filename=self.config.get('filename', os.path.join('data', 'conversation.json')) 
-
-        # All variables that can be modified
         self.model = self.config.get('model', 'gpt-3.5-turbo-1106') 
         self.system_message = self.config.get('system_message', 'You are an assistant providing help with any issues.') 
         self.user_message = self.config.get('user_message','What can you help me with today?') 
         self.assistant_message = self.config.get('assistant_message', 'Hi, how can I help you today?')
         self.max_tokens = self.config.get('max_tokens', 750)
+
+    def createfiles(self):
+        """Create necessary configuration files if they do not exist on the target computer.
+
+        If you wish to change/add default startup settings, do so here.
+        Omitted files are usually ones that are .gitignored. 
+        This includes creating a default configuration file if it is not found."""
+        default_config = {
+            "model": "gpt-3.5-turbo-1106",
+            "max_tokens": 500,
+            "system_message": "You are an assistant providing help for any task, utilizing context for the best responses",
+            "user_message": "What can you help me with today?",
+            "assistant_message": "Hi there! How can I help you today?",
+            "filename": os.path.join('data', 'conversation.json'),
+            "OPENAI_API_KEY": "YOUR_API_KEY_HERE",
+            }
+
+        if not os.path.exists(self.config_path): # Writes a new configs.json if not found. 
+            with open(self.config_path, 'w') as file:
+                json.dump(default_config, file)
+                print(f"Config file created: {self.config_path}")
+
+            self.config = self.load_config(self.config_path)
+
+            default_messages = [
+                {"role": "system", "content": self.config['system_message']},
+                {"role": "user", "content": self.config['user_message']},
+                {"role": "assistant", "content": self.config['assistant_message']}
+            ]
+            self.save_conversation_to_file(self.config['filename'], default_messages)
+            print(f"Conversation file created: {self.config['filename']}")
 
     def chat_gpt(self, user_input):
         """Performs the API call, and inputs the given user input from the GUI to perform the call.
@@ -228,25 +257,4 @@ class ConversationLogic:
         self.client = OpenAI(api_key=self.api_key)
 
         # Update other settings as needed
-
-    def createfiles(self):
-        """Create necessary configuration files if they do not exist on the target computer.
-
-        If you wish to change/add default startup settings, do so here.
-        Omitted files are usually ones that are .gitignored. 
-        This includes creating a default configuration file if it is not found."""
-        default_config = {
-            "model": "gpt-3.5-turbo-1106",
-            "max_tokens": 500,
-            "system_message": "You are an assistant providing help for any task, utilizing context for the best responses",
-            "user_message": "What can you help me with today?",
-            "assistant_message": "Hi there! How can I help you today?",
-            "filename": "data/conversation.json",
-            "OPENAI_API_KEY": "YOUR_API_KEY_HERE",
-            }
-
-        if not os.path.exists(self.config_path): # Writes a new configs.json if not found. 
-            with open(self.config_path, 'w') as file:
-                json.dump(default_config, file)
-                print(f"Config file created: {self.config_path}")
 

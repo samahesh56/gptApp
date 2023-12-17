@@ -60,6 +60,18 @@ class ConversationLogic:
             self.save_conversation_to_file(self.config['filename'], default_messages)
             print(f"Conversation file created: {self.config['filename']}")
 
+    def load_config(self, config_path):
+        """Load the configuration settings from a JSON file.
+        Args:
+            config_path (str): The path to the configuration JSON file.
+
+        Returns:
+            dict: The loaded configuration settings as a dictionary.
+        """
+
+        with open(config_path, 'r') as file:
+            return json.load(file)    
+
     def chat_gpt(self, user_input):
         """Performs the API call, and inputs the given user input from the GUI to perform the call.
         Args:
@@ -96,21 +108,22 @@ class ConversationLogic:
 
         messages = self.load_conversation().get('messages', []) 
         new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}], model=self.model) # calculates the ~amount of input tokens prior to the API call
-        remaining_tokens = self.max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the conversation is truncated more harshly. This helps reduce costs slightly, at the cost of reducing early context for the GPT. 
+        remaining_tokens = self.max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the conversation is truncated more harshly to fit within the token limit. This helps reduce costs slightly, at the cost of reducing prior context for the GPT. 
         print(f"\n~ input tokens: {new_input_tokens} ~ remaining tokens: {remaining_tokens}")
 
         messages = self.trim_conversation_history(messages, remaining_tokens) # Performs the conversation truncation, sends in conversation and the tokens left to use. This new message holds what the api call can handle, and omits the oldest message according to the tokens allowed
-        messages.append({"role": "user", "content": user_input }) # appends the newest message to the conversation (messages)
-        # IMPORTANT: Due to the trim function, chatGPT may lose context of the system message. In the future, introduce a method for checking if the system message is in the input, and reintroduce it if neceessary. 
+        messages.append({"role": "user", "content": user_input }) # appends the newest message to the conversation
+        # IMPORTANT: Due to the trim function, chatGPT may lose context of the system message and early context. In the future, introduce better truncation methods (such as summation) 
 
         try:
-            response = self.client.chat.completions.create( # This is the client call to chatGPT
-                model=self.model, # inputs given model type 
+            response = self.client.chat.completions.create( # This is the client API call to OpenAI
+                model=self.model, # inputs current model type 
                 messages=messages, # inputs the given conversation (truncated)
                 max_tokens=self.max_tokens, # a "limiter" that helps truncate conversations
             )
 
-            total_tokens_used = response.usage.total_tokens # calculates total tokens used in api call using chatgpt call for total tokens. LOG THESE FOR DEBUGGING, ETC
+            # These are return statements from the API (look at documentation for more info). These are helpful for future logging and debugging. 
+            total_tokens_used = response.usage.total_tokens
             input_tokens = response.usage.prompt_tokens
             response_tokens = response.usage.completion_tokens
             model_type = response.model
@@ -234,18 +247,6 @@ class ConversationLogic:
 
         return truncated_messages
     
-    def load_config(self, config_path):
-        """Load the configuration settings from a JSON file.
-        Args:
-            config_path (str): The path to the configuration JSON file.
-
-        Returns:
-            dict: The loaded configuration settings as a dictionary.
-        """
-
-        with open(config_path, 'r') as file:
-            return json.load(file)
-        
     def update_settings(self, new_settings):
         """Updates the __init__ variables with settings provided by the dictionary in configs.json.
 

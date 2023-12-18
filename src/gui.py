@@ -32,6 +32,17 @@ class Main(tk.Frame):
         This includes the menu bar, conversation text widget, and toolbar """
 
         # Menu Bar
+        self.create_menu_bar()
+
+        # Conversation Text Section
+        self.create_conversation_text_section()
+
+        # Toolbar Section
+        self.create_toolbar_section()
+
+    def create_menu_bar(self):
+        """Create the Menu Bar with File and Settings options"""
+
         menu_bar = tk.Menu(self.parent) # a Tkinter Menu holds a dropdown of contents for ease of access. Pass the parent root (self.parent) heree
         self.parent.config(menu=menu_bar) # assigns the menu bar to the parent window(root). This sets the menu bar to the tkinter window.
 
@@ -49,26 +60,30 @@ class Main(tk.Frame):
         menu_bar.add_command(label="Load", command=self.load_conversation)
         menu_bar.add_command(label="ChatGPT Settings", command=self.open_settings_menu)
 
+    def create_conversation_text_section(self):
+        """Create the Conversation Text Section"""
+
         # Main conversation text widget
         self.scrollbar = tk.Scrollbar(self.parent, orient=tk.VERTICAL) 
         self.conversation_text = tk.Text(self.parent, state='normal', wrap=tk.WORD, yscrollcommand=self.scrollbar.set)
+        
         self.scrollbar.config(command=self.conversation_text.yview) # provides scroll wheel for the conversation_text. 
-
+        
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y) # pack scroll wheel inside the conversation text 
         self.conversation_text.pack(padx=5, pady=5, fill=tk.BOTH, expand=True)
-    
-        
+
+    def create_toolbar_section(self):
+        """Create the Toolbar Section"""
+
         # Toolbar that holds user input, reset button, and send button. 
         self.toolbar = tk.Frame(self.parent, bd=1, bg="grey")
-        self.toolbar.pack(side=tk.BOTTOM, fill=tk.X)
-        
         self.user_input_entry = tk.Entry(self.toolbar, width=80) # User-input 
-        self.user_input_entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5) # "packs" input into parent frame
-
-        send_button = tk.Button(self.toolbar, text="Send", command=self.on_send_button_click) #send button initiates call 
-        send_button.pack(side=tk.RIGHT, padx=5, pady=5) # "packs" send button in frame 
-
+        send_button = tk.Button(self.toolbar, text="Send", command=self.on_send_button_click) #send button initiates call
         self.reset_button = tk.Button(self.toolbar, text="Reset Conversation", command=self.on_reset_button_click)
+       
+        self.toolbar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.user_input_entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5) 
+        send_button.pack(side=tk.RIGHT, padx=5, pady=5) 
         self.reset_button.pack(fill=tk.X, padx=5, pady=5)
 
     def on_send_button_click(self):
@@ -172,7 +187,7 @@ class Main(tk.Frame):
             with open('configs.json', 'w') as f:
                 json.dump(configs, f)
 
-            self.conversation_logic.update_settings(configs) # updates settings in real-time
+            self.conversation_logic.update_configs(configs) # updates settings in real-time
             settings_window.destroy()  #Disable this if you want to close the settings menu open after apply is pressed. Otherwise, add an alert that says "Settings Changed"
 
         # Apply button

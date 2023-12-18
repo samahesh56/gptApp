@@ -9,7 +9,7 @@ if __name__ == "__main__": #main start method for the program
 
     config_manager = ConfigManager(config_path='configs.json') # change initial config path if necessaary. Creates instance of ConfigManager 
 
-    conversation_logic = ConversationLogic(config_manager) # creates an instance of ConversationLogic() class that conversation_logic functionality 
+    conversation_logic = ConversationLogic(config_manager) # creates an instance of ConversationLogic(), with config file path sent in.
 
-    Main(root, conversation_logic).pack(side="top", fill="both", expand=True) # Main is called, starting the program
-    root.mainloop() # starts root program 
+    Main(root, conversation_logic).pack(side="top", fill="both", expand=True) # Creates an instance of Main (GUI) 
+    root.mainloop() # starts GUI  

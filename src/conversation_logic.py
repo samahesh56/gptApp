@@ -199,10 +199,8 @@ class ConversationLogic:
         return truncated_messages
     
     def update_configs(self, new_settings):
-        print(self.model)
         self.config_manager.update_configs(new_settings)
-        self.client = OpenAI(api_key=self.config.get('OPENAI_API_KEY'))
+        self.client = OpenAI(api_key=self.config.get('OPENAI_API_KEY')) # client is initiated with new API key. 
         # Update any other logic in ConversationLogic as needed
-        print(f"New Model: {self.model}")
         
     

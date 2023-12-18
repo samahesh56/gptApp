@@ -172,7 +172,7 @@ class Main(tk.Frame):
             with open('configs.json', 'w') as f:
                 json.dump(configs, f)
 
-            self.conversation_logic.update_settings(configs) # updates settings in real-time
+            self.conversation_logic.update_configs(configs) # updates settings in real-time
             settings_window.destroy()  #Disable this if you want to close the settings menu open after apply is pressed. Otherwise, add an alert that says "Settings Changed"
 
         # Apply button

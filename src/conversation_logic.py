@@ -199,8 +199,16 @@ class ConversationLogic:
         return truncated_messages
     
     def update_configs(self, new_settings):
+        """Abstract class for updating the configs through the config manager
+        
+        Config file is changed within configuration.py. 
+        Add new or updated self. variabvles here to implement the config changes.
+        """
         self.config_manager.update_configs(new_settings)
         self.client = OpenAI(api_key=self.config.get('OPENAI_API_KEY')) # client is initiated with new API key. 
+        self.model = self.config.get('model') 
+        self.system_message = self.config.get('system_message') 
+        self.max_tokens = self.config.get('max_tokens')
         # Update any other logic in ConversationLogic as needed
         
     

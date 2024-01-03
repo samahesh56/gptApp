@@ -1,6 +1,7 @@
 import json, os, tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from conversation_logic import ConversationLogic
+from configuration import ConfigManager
 
 class Main(tk.Frame): 
     """A class that creates the main GUI frame for the ChatGPTApp"""
@@ -30,15 +31,17 @@ class Main(tk.Frame):
         """Initializes the graphical user interface (GUI) elements
         
         This includes the menu bar, conversation text widget, and toolbar """
+        self.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
+        self.columnconfigure(0, weight=0)
+        self.columnconfigure(1, weight=1)
+        self.rowconfigure(1, weight=1)
 
-        # Menu Bar
+        # GUI layout
         self.create_menu_bar()
-
-        # Conversation Text Section
-        self.create_conversation_text_section()
-
-        # Toolbar Section
-        self.create_toolbar_section()
+        self.create_left_frame()
+        self.create_middle_frame()
+        self.create_toolbar_frame()
+        self.create_right_frame()
 
     def create_menu_bar(self):
         """Create the Menu Bar with File and Settings options"""
@@ -60,39 +63,74 @@ class Main(tk.Frame):
         menu_bar.add_command(label="Load", command=self.load_conversation)
         menu_bar.add_command(label="ChatGPT Settings", command=self.open_settings_menu)
 
-    def create_conversation_text_section(self):
-        """Create the Conversation Text Section"""
-
-        # Main conversation text widget
-        self.scrollbar = tk.Scrollbar(self.parent, orient=tk.VERTICAL) 
-        self.conversation_text = tk.Text(self.parent, state='normal', wrap=tk.WORD, yscrollcommand=self.scrollbar.set)
+    def create_left_frame(self):
+        # Left Frame
+        left_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
+        left_frame.grid(column=0, row=1)
+        left_frame.rowconfigure(0, weight=1)
         
-        self.scrollbar.config(command=self.conversation_text.yview) # provides scroll wheel for the conversation_text. 
-        
-        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y) # pack scroll wheel inside the conversation text 
-        self.conversation_text.pack(padx=5, pady=5, fill=tk.BOTH, expand=True)
+        label_text = "Hello, Left Frame!"
+        label = tk.Label(left_frame, text=label_text, font=("Helvetica", 14))
+        label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
-    def create_toolbar_section(self):
+    def create_middle_frame(self):
+        # Middle Frame
+        middle_frame = tk.Frame(self, bd=2, relief="raised")
+        middle_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # Configure weight for the middle frame's column and row
+        self.columnconfigure(1, weight=1)
+        middle_frame.rowconfigure(0, weight=1)
+
+        # Display the conversation text section
+        self.conversation_text = tk.Text(middle_frame, wrap="word", width=100, height=35)
+        self.conversation_text.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Scroll Bar:     
+        conversation_scroll = tk.Scrollbar(middle_frame, command=self.conversation_text.yview)
+        conversation_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        self.conversation_text['yscrollcommand'] = conversation_scroll.set
+
+    def create_right_frame(self):
+        # Right Frame
+        right_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
+        right_frame.grid(column=2, row=1)
+        right_frame.rowconfigure(0, weight=1)
+        
+        label_text = "Hello, Right Frame!"
+        label = tk.Label(right_frame, text=label_text, font=("Helvetica", 14))
+        label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.E)
+
+    def create_toolbar_frame(self):
         """Create the Toolbar Section"""
 
         # Toolbar that holds user input, reset button, and send button. 
-        self.toolbar = tk.Frame(self.parent, bd=1, bg="grey")
-        self.user_input_entry = tk.Entry(self.toolbar, width=80) # User-input 
-        send_button = tk.Button(self.toolbar, text="Send", command=self.on_send_button_click) #send button initiates call
-        self.reset_button = tk.Button(self.toolbar, text="Reset Conversation", command=self.on_reset_button_click)
-       
-        self.toolbar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.user_input_entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5) 
-        send_button.pack(side=tk.RIGHT, padx=5, pady=5) 
-        self.reset_button.pack(fill=tk.X, padx=5, pady=5)
+        toolbar = tk.Frame(self, bd=1, bg="grey", height=50)
+        toolbar.grid(row=2, column=1, sticky=tk.W + tk.E, padx=10, pady=10)
+        toolbar.columnconfigure(0, weight=1)  # Makes the user_input_entry expand horizontally.
+
+        self.user_input_entry = tk.Text(toolbar, wrap="word", height=4) # User-input
+        self.user_input_entry.grid(row=0, column=0, sticky=tk.W, padx=5) 
+
+        # Scroll Bar:     
+        input_scroll = tk.Scrollbar(toolbar, command=self.user_input_entry.yview)
+        input_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        self.user_input_entry['yscrollcommand'] = input_scroll.set
+
+        #send_button = tk.Button(toolbar, text="Send", command=self.on_send_button_click, width=10, height=1) #send button initiates call
+        #send_button.grid(row=0, column=1, sticky=tk.E, padx=5) 
+
+        self.reset_button = tk.Button(toolbar, text="Reset Conversation", command=self.on_reset_button_click, width=15, height=1)
+        self.reset_button.grid(row=0, column=2, sticky=tk.W + tk.E, padx=5)
+
 
     def on_send_button_click(self):
         """Handles the action when the Send button is clicked.
         
         Processes user input and displays GPT response in the conversation text widget """
 
-        user_input = self.user_input_entry.get() # takes in the user input 
-        self.user_input_entry.delete(0, tk.END) 
+        user_input = self.user_input_entry.get("1.0", "end-1c") # takes in the user input 
+        self.user_input_entry.delete("1.0", tk.END) 
         gpt_response, error_response = self.conversation_logic.chat_gpt(user_input) # performs the API call (chat gpt function call, class conversation_logic)
         
         # Check if response is an error message
@@ -234,7 +272,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.title("GPT App") # set the name of the app
     #root.geometry('800x600') # sets size of the window 
-    conversation_logic = ConversationLogic()
+    conversation_logic = ConversationLogic(ConfigManager(config_path='configs.json'))
 
     Main(root, conversation_logic).pack(side="top", fill="both", expand=True)
     root.mainloop()

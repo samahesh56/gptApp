@@ -30,7 +30,7 @@ class Main(tk.Frame):
     def init_gui(self):
         """Initializes the graphical user interface (GUI) elements
         
-        This includes the menu bar, conversation text widget, and toolbar """
+        This includes setting up the grid elements for the menu bar, and other essential frames. """
         self.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)
@@ -46,7 +46,7 @@ class Main(tk.Frame):
     def create_menu_bar(self):
         """Create the Menu Bar with File and Settings options"""
 
-        menu_bar = tk.Menu(self.parent) # a Tkinter Menu holds a dropdown of contents for ease of access. Pass the parent root (self.parent) heree
+        menu_bar = tk.Menu(self) # a Tkinter Menu holds a dropdown of contents for ease of access.
         self.parent.config(menu=menu_bar) # assigns the menu bar to the parent window(root). This sets the menu bar to the tkinter window.
 
         # File Menu (Menu Toolbar)
@@ -67,7 +67,8 @@ class Main(tk.Frame):
         # Left Frame
         left_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
         left_frame.grid(column=0, row=1)
-        left_frame.rowconfigure(0, weight=1)
+        #left_frame.rowconfigure(0, weight=1)
+        #left_frame.columnconfigure(0, weight=0)
         
         label_text = "Hello, Left Frame!"
         label = tk.Label(left_frame, text=label_text, font=("Helvetica", 14))
@@ -79,7 +80,9 @@ class Main(tk.Frame):
         middle_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         # Configure weight for the middle frame's column and row
+        self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
         middle_frame.rowconfigure(0, weight=1)
 
         # Display the conversation text section
@@ -106,22 +109,26 @@ class Main(tk.Frame):
 
         # Toolbar that holds user input, reset button, and send button. 
         toolbar = tk.Frame(self, bd=1, bg="grey", height=50)
-        toolbar.grid(row=2, column=1, sticky=tk.W + tk.E, padx=10, pady=10)
+        toolbar.grid(row=2, column=1, sticky=tk.W + tk.E, padx=5, pady=5)
         toolbar.columnconfigure(0, weight=1)  # Makes the user_input_entry expand horizontally.
 
-        self.user_input_entry = tk.Text(toolbar, wrap="word", height=4) # User-input
-        self.user_input_entry.grid(row=0, column=0, sticky=tk.W, padx=5) 
+        self.user_input_entry = tk.Text(toolbar, wrap="word", height=6) # User-input
+        self.user_input_entry.grid(row=0, column=0,sticky=(tk.E,tk.W), padx=5, pady=5) 
 
-        # Scroll Bar:     
+        # Scroll Bar    
         input_scroll = tk.Scrollbar(toolbar, command=self.user_input_entry.yview)
         input_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
         self.user_input_entry['yscrollcommand'] = input_scroll.set
 
-        #send_button = tk.Button(toolbar, text="Send", command=self.on_send_button_click, width=10, height=1) #send button initiates call
-        #send_button.grid(row=0, column=1, sticky=tk.E, padx=5) 
+        # Button Frame
+        button_frame = tk.Frame(toolbar, bg="grey")
+        button_frame.grid(row=0, column=2, sticky=tk.E)
 
-        self.reset_button = tk.Button(toolbar, text="Reset Conversation", command=self.on_reset_button_click, width=15, height=1)
-        self.reset_button.grid(row=0, column=2, sticky=tk.W + tk.E, padx=5)
+        send_button = tk.Button(button_frame, text="Send", command=self.on_send_button_click, width=15, height=2)
+        send_button.grid(row=0, column=0, padx=5, pady=10)
+
+        self.reset_button = tk.Button(button_frame, text="Reset Conversation", command=self.on_reset_button_click, width=15, height=2)
+        self.reset_button.grid(row=1, column=0, padx=5, pady=10)
 
 
     def on_send_button_click(self):

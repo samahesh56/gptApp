@@ -1,5 +1,6 @@
 import json, os, tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+from datetime import datetime
 from conversation_logic import ConversationLogic
 from configuration import ConfigManager
 
@@ -130,6 +131,13 @@ class Main(tk.Frame):
         self.reset_button = tk.Button(button_frame, text="Reset Conversation", command=self.on_reset_button_click, width=15, height=2)
         self.reset_button.grid(row=1, column=0, padx=5, pady=10)
 
+        # Status Bar
+        self.status_var = tk.StringVar()
+        current_time = datetime.now().strftime("%H:%M")
+        self.status_var.set(f"Waiting for API call... Last Updated: {current_time} | ChatGPT can make mistakes. Consider double checking important information.") # Set initial status 
+        self.status_bar = tk.Label(toolbar, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W )
+        self.status_bar.grid(row=1, column=0, columnspan=2, sticky=tk.W + tk.E, padx=5, pady=5)
+
 
     def on_send_button_click(self):
         """Handles the action when the Send button is clicked.
@@ -139,6 +147,7 @@ class Main(tk.Frame):
         user_input = self.user_input_entry.get("1.0", "end-1c") # takes in the user input 
         self.user_input_entry.delete("1.0", tk.END) 
         gpt_response, error_response = self.conversation_logic.chat_gpt(user_input) # performs the API call (chat gpt function call, class conversation_logic)
+        current_time = datetime.now().strftime("%H:%M")
         
         # Check if response is an error message
         if gpt_response is not None:
@@ -146,10 +155,19 @@ class Main(tk.Frame):
             self.conversation_text.insert(tk.END, f"User: {user_input}\n")
             self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
             self.conversation_text.see(tk.END)
+            
+            # Status bar information  
+            self.status_var.set(f"Call Successful! "
+                f"Tokens Used: {self.conversation_logic.total_tokens_used} | "
+                f"Input Tokens: {self.conversation_logic.input_tokens} | "
+                f"Stop Reason: {self.conversation_logic.stop_reason} | "
+                f"Model: {self.conversation_logic.model} | "
+                f"Time: {current_time}")
         else:
             # Display the error message in the GUI
             if "401" or "APIConnectionError" in error_response:
                 messagebox.showinfo("Authentication Error", "Invalid or expired API key. Please check your API key.")
+                self.status_var/set(f"API Call Failed! Please check your API Key, or other settngs. Time: {current_time} ")
             
     def on_reset_button_click(self):
         """Handles the action when the Reset Conversation button is clicked.
@@ -171,7 +189,7 @@ class Main(tk.Frame):
             role = message["role"]
             content = message["content"]
             self.conversation_text.insert(tk.END, f"{role.capitalize()}: {content}\n")
-  
+
     def new_conversation(self):
         messagebox.showinfo("New Conversation", "Create a new conversation")
         # Implement the logic for creating a new conversation in ConversationLogic

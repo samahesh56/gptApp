@@ -74,12 +74,12 @@ class ConversationLogic:
             )
 
             # These are return statements from the API (look at documentation for more info). These are helpful for future logging and debugging. 
-            total_tokens_used = response.usage.total_tokens
-            input_tokens = response.usage.prompt_tokens
-            response_tokens = response.usage.completion_tokens
-            model_type = response.model
-            stop_reason = response.choices[0].finish_reason
-            print(f"Total tokens used for API call: {total_tokens_used} | Total Input: {input_tokens} | Total Reponse: {response_tokens}\nModel Used: {model_type} | API Stop Reason: {stop_reason}")
+            self.total_tokens_used = response.usage.total_tokens
+            self.input_tokens = response.usage.prompt_tokens
+            self.response_tokens = response.usage.completion_tokens
+            self.model_type = response.model
+            self.stop_reason = response.choices[0].finish_reason
+            print(f"Total tokens used for API call: {self.total_tokens_used} | Total Input: {self.input_tokens} | Total Response: {self.response_tokens}\nModel Used: {self.model_type} | API Stop Reason: {self.stop_reason}")
 
             response = response.choices[0].message.content # this is the API call to get the latest gpt response 
             self.update_conversation(user_input, response) # updates the conversation with the latest input and response

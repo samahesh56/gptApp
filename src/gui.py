@@ -167,7 +167,7 @@ class Main(tk.Frame):
             # Display the error message in the GUI
             if "401" or "APIConnectionError" in error_response:
                 messagebox.showinfo("Authentication Error", "Invalid or expired API key. Please check your API key.")
-                self.status_var/set(f"API Call Failed! Please check your API Key, or other settngs. Time: {current_time} ")
+                self.status_var.set(f"API Call Failed! Please check your API Key, or other settngs. Time: {current_time} ")
             
     def on_reset_button_click(self):
         """Handles the action when the Reset Conversation button is clicked.

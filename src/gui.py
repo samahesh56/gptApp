@@ -156,7 +156,7 @@ class Main(tk.Frame):
             self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
             self.conversation_text.see(tk.END)
             
-            # Status bar information  
+            # Update Status Bar Information  
             self.status_var.set(f"Call Successful! "
                 f"Tokens Used: {self.conversation_logic.total_tokens_used} | "
                 f"Input Tokens: {self.conversation_logic.input_tokens} | "
@@ -167,7 +167,7 @@ class Main(tk.Frame):
             # Display the error message in the GUI
             if "401" or "APIConnectionError" in error_response:
                 messagebox.showinfo("Authentication Error", "Invalid or expired API key. Please check your API key.")
-                self.status_var/set(f"API Call Failed! Please check your API Key, or other settngs. Time: {current_time} ")
+                self.status_var.set(f"API Call Failed! Please check your API Key, or other settngs. Occurred At: {current_time} ")
             
     def on_reset_button_click(self):
         """Handles the action when the Reset Conversation button is clicked.

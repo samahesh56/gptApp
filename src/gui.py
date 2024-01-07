@@ -1,5 +1,6 @@
 import json, os, tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+from datetime import datetime
 from conversation_logic import ConversationLogic
 from configuration import ConfigManager
 
@@ -30,7 +31,7 @@ class Main(tk.Frame):
     def init_gui(self):
         """Initializes the graphical user interface (GUI) elements
         
-        This includes the menu bar, conversation text widget, and toolbar """
+        This includes setting up the grid elements for the menu bar, and other essential frames. """
         self.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)
@@ -46,7 +47,7 @@ class Main(tk.Frame):
     def create_menu_bar(self):
         """Create the Menu Bar with File and Settings options"""
 
-        menu_bar = tk.Menu(self.parent) # a Tkinter Menu holds a dropdown of contents for ease of access. Pass the parent root (self.parent) heree
+        menu_bar = tk.Menu(self) # a Tkinter Menu holds a dropdown of contents for ease of access.
         self.parent.config(menu=menu_bar) # assigns the menu bar to the parent window(root). This sets the menu bar to the tkinter window.
 
         # File Menu (Menu Toolbar)
@@ -67,7 +68,8 @@ class Main(tk.Frame):
         # Left Frame
         left_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
         left_frame.grid(column=0, row=1)
-        left_frame.rowconfigure(0, weight=1)
+        #left_frame.rowconfigure(0, weight=1)
+        #left_frame.columnconfigure(0, weight=0)
         
         label_text = "Hello, Left Frame!"
         label = tk.Label(left_frame, text=label_text, font=("Helvetica", 14))
@@ -79,7 +81,9 @@ class Main(tk.Frame):
         middle_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         # Configure weight for the middle frame's column and row
+        self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
         middle_frame.rowconfigure(0, weight=1)
 
         # Display the conversation text section
@@ -106,22 +110,33 @@ class Main(tk.Frame):
 
         # Toolbar that holds user input, reset button, and send button. 
         toolbar = tk.Frame(self, bd=1, bg="grey", height=50)
-        toolbar.grid(row=2, column=1, sticky=tk.W + tk.E, padx=10, pady=10)
+        toolbar.grid(row=2, column=1, sticky=tk.W + tk.E, padx=5, pady=5)
         toolbar.columnconfigure(0, weight=1)  # Makes the user_input_entry expand horizontally.
 
-        self.user_input_entry = tk.Text(toolbar, wrap="word", height=4) # User-input
-        self.user_input_entry.grid(row=0, column=0, sticky=tk.W, padx=5) 
+        self.user_input_entry = tk.Text(toolbar, wrap="word", height=6) # User-input
+        self.user_input_entry.grid(row=0, column=0,sticky=(tk.E,tk.W), padx=5, pady=5) 
 
-        # Scroll Bar:     
+        # Scroll Bar    
         input_scroll = tk.Scrollbar(toolbar, command=self.user_input_entry.yview)
         input_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
         self.user_input_entry['yscrollcommand'] = input_scroll.set
 
-        #send_button = tk.Button(toolbar, text="Send", command=self.on_send_button_click, width=10, height=1) #send button initiates call
-        #send_button.grid(row=0, column=1, sticky=tk.E, padx=5) 
+        # Button Frame
+        button_frame = tk.Frame(toolbar, bg="grey")
+        button_frame.grid(row=0, column=2, sticky=tk.E)
 
-        self.reset_button = tk.Button(toolbar, text="Reset Conversation", command=self.on_reset_button_click, width=15, height=1)
-        self.reset_button.grid(row=0, column=2, sticky=tk.W + tk.E, padx=5)
+        send_button = tk.Button(button_frame, text="Send", command=self.on_send_button_click, width=15, height=2)
+        send_button.grid(row=0, column=0, padx=5, pady=10)
+
+        self.reset_button = tk.Button(button_frame, text="Reset Conversation", command=self.on_reset_button_click, width=15, height=2)
+        self.reset_button.grid(row=1, column=0, padx=5, pady=10)
+
+        # Status Bar
+        self.status_var = tk.StringVar()
+        current_time = datetime.now().strftime("%H:%M")
+        self.status_var.set(f"Waiting for API call... Last Updated: {current_time} | ChatGPT can make mistakes. Consider double checking important information.") # Set initial status 
+        self.status_bar = tk.Label(toolbar, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W )
+        self.status_bar.grid(row=1, column=0, columnspan=2, sticky=tk.W + tk.E, padx=5, pady=5)
 
 
     def on_send_button_click(self):
@@ -132,6 +147,7 @@ class Main(tk.Frame):
         user_input = self.user_input_entry.get("1.0", "end-1c") # takes in the user input 
         self.user_input_entry.delete("1.0", tk.END) 
         gpt_response, error_response = self.conversation_logic.chat_gpt(user_input) # performs the API call (chat gpt function call, class conversation_logic)
+        current_time = datetime.now().strftime("%H:%M")
         
         # Check if response is an error message
         if gpt_response is not None:
@@ -139,10 +155,19 @@ class Main(tk.Frame):
             self.conversation_text.insert(tk.END, f"User: {user_input}\n")
             self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
             self.conversation_text.see(tk.END)
+            
+            # Status bar information  
+            self.status_var.set(f"Call Successful! "
+                f"Tokens Used: {self.conversation_logic.total_tokens_used} | "
+                f"Input Tokens: {self.conversation_logic.input_tokens} | "
+                f"Stop Reason: {self.conversation_logic.stop_reason} | "
+                f"Model: {self.conversation_logic.model} | "
+                f"Time: {current_time}")
         else:
             # Display the error message in the GUI
             if "401" or "APIConnectionError" in error_response:
                 messagebox.showinfo("Authentication Error", "Invalid or expired API key. Please check your API key.")
+                self.status_var/set(f"API Call Failed! Please check your API Key, or other settngs. Time: {current_time} ")
             
     def on_reset_button_click(self):
         """Handles the action when the Reset Conversation button is clicked.
@@ -164,7 +189,7 @@ class Main(tk.Frame):
             role = message["role"]
             content = message["content"]
             self.conversation_text.insert(tk.END, f"{role.capitalize()}: {content}\n")
-  
+
     def new_conversation(self):
         messagebox.showinfo("New Conversation", "Create a new conversation")
         # Implement the logic for creating a new conversation in ConversationLogic

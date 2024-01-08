@@ -1,23 +1,10 @@
----
-name: Feature request
-about: 'Suggest an idea/change for the ChatGPT app. '
-title: ''
-labels: ''
-assignees: ''
+Provide a brief description of the intended changes. This includes any new, existing, or removed features, along with descriptions of its intended use in the program.
 
----
+## Goals
+Provide reasonable goals for the intended feature, creating a "checklist" to ensure that all features provided are met. 
 
-**What is the new feature you would like to see added?**
-Provide an outline of the feature, and its intended functionality or use. 
+## Implementation Ideas
+Provide ideas on how to implement the features. This can include a brief overview of its coded structure, along with intended functionality. 
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
-
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
-
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
-
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## Potential Challenges
+Provide reasonable challenges that may be encountered, and maintain cohesive programming when possible 

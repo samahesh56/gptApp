@@ -1,9 +1,12 @@
+import logging
 import tkinter as tk
 from conversation_logic import ConversationLogic
 from configuration import ConfigManager
 from gui import Main
 
 if __name__ == "__main__": #main start method for the program 
+    logging.basicConfig(filename='gpt_app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s') # Initialize python logging. 
+    
     root = tk.Tk() # assembles the tkinter root
     root.title("GPT App") # change title here
 

@@ -3,3 +3,4 @@ configs.json
 **/__pycache__/
 venv/
 data/*.json
+gpt_app.log

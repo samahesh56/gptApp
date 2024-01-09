@@ -19,7 +19,7 @@ class Main(tk.Frame):
         super().__init__(parent, **kwargs) 
         self.parent = parent 
         self.conversation_logic = conversation_logic 
-        self.filename = os.path.join('data', 'conversation.json') # initial conversation location 
+        self.filename = os.path.join('data', 'conversation.json') # initial conversation path 
         self.init_gui()
 
         if os.path.exists(self.filename):  # Check if the conversation file exists
@@ -67,12 +67,26 @@ class Main(tk.Frame):
 
     def create_left_frame(self):
         # Left Frame
-        left_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
-        left_frame.grid(column=0, row=1)
+        left_frame = tk.Frame(self, bd=1, relief="flat") # add styling as needeed
+        left_frame.grid(column=0, row=1, rowspan=2, sticky=tk.W + tk.E + tk.N + tk.S)
+        left_frame.rowconfigure(0, weight=1)
         
-        label_text = "Hello, Left Frame!"
-        label = tk.Label(left_frame, text=label_text, font=("Helvetica", 14))
-        label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
+        # Title Frame
+        title_frame = tk.Frame(left_frame, bd=1, relief="flat", bg='red')
+        title_frame.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W + tk.E + tk.N)
+
+        title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16))
+        title_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
+
+        self.model_var = tk.StringVar(value="Current Model: " + conversation_logic.config.get('model', 'Model Name')) # creates a selection of String data to get/set. 
+
+        # Model Label
+        model_label = tk.Label(title_frame, textvariable=self.model_var, font=("Helvetica", 12))
+        model_label.grid(row=1, column=0, padx=10, pady=10)
+
+        #additional_frame = tk.Frame(title_frame, bd=1, relief="flat", height=200, bg='blue')  # Set your desired height
+        #additional_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
+  
 
     def create_middle_frame(self):
         # Middle Frame
@@ -82,7 +96,7 @@ class Main(tk.Frame):
         middle_frame.rowconfigure(0, weight=1)
 
         # Display the conversation text section
-        self.conversation_text = tk.Text(middle_frame, wrap="word", width=100, height=35,  font=("Helvetica", 12))
+        self.conversation_text = tk.Text(middle_frame, wrap="word", width=100, height=30,  font=("Helvetica", 12))
         self.conversation_text.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Scroll Bar:     
@@ -235,7 +249,7 @@ class Main(tk.Frame):
 
         # Function to update config on 'apply'
         def update_config():
-            configs['model'] = model_var.get()
+            configs['model'] = self.model_var.get()
             configs['max_tokens'] = max_tokens_var.get()
             configs['system_message'] = system_message_var.get()
             configs['OPENAI_API_KEY'] = api_key_var.get()
@@ -255,11 +269,10 @@ class Main(tk.Frame):
         
         # Model selection
         tk.Label(settings_window, text='Model:').grid(row=0, column=0)
-        model_var = tk.StringVar() # creates a selection of String data to get/set. 
-        model_select = ttk.Combobox(settings_window, textvariable=model_var) # Dropdown menu for changing models. Text is held in model_var
+        model_select = ttk.Combobox(settings_window, textvariable=self.model_var) # Dropdown menu for changing models. Text is held in model_var
         model_select['values'] = ('gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4')  # Set available models here 
         model_select.grid(row=0, column=1) # assigns it to column 1. 
-        model_var.set(configs.get('model'))
+        self.model_var.set(configs.get('model'))
 
         # Max Tokens
         tk.Label(settings_window, text='Max Tokens:').grid(row=1, column=0)

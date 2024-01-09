@@ -24,7 +24,7 @@ class Main(tk.Frame):
 
         if os.path.exists(self.filename):  # Check if the conversation file exists
             self.conversation_logic.load_conversation()
-            self.update_conversation_text()
+            self.conversation_text.yview(tk.END, self.update_conversation_text()) # Sets the scrollbar behavior to the "lowest (end)", whilst updating the conversation text 
         else:
             print(f"Conversation file not found at {self.filename}")
 
@@ -33,8 +33,9 @@ class Main(tk.Frame):
         
         This includes setting up the grid elements for the menu bar, and other essential frames. """
         self.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
-        self.columnconfigure(0, weight=0)
+        self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
         self.rowconfigure(1, weight=1)
 
         # GUI layout
@@ -68,8 +69,6 @@ class Main(tk.Frame):
         # Left Frame
         left_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
         left_frame.grid(column=0, row=1)
-        #left_frame.rowconfigure(0, weight=1)
-        #left_frame.columnconfigure(0, weight=0)
         
         label_text = "Hello, Left Frame!"
         label = tk.Label(left_frame, text=label_text, font=("Helvetica", 14))
@@ -79,15 +78,11 @@ class Main(tk.Frame):
         # Middle Frame
         middle_frame = tk.Frame(self, bd=2, relief="raised")
         middle_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
-
-        # Configure weight for the middle frame's column and row
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.columnconfigure(2, weight=1)
+        middle_frame.columnconfigure(0, weight=1)
         middle_frame.rowconfigure(0, weight=1)
 
         # Display the conversation text section
-        self.conversation_text = tk.Text(middle_frame, wrap="word", width=100, height=35)
+        self.conversation_text = tk.Text(middle_frame, wrap="word", width=100, height=35,  font=("Helvetica", 12))
         self.conversation_text.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Scroll Bar:     
@@ -112,8 +107,9 @@ class Main(tk.Frame):
         toolbar = tk.Frame(self, bd=1, bg="grey", height=50)
         toolbar.grid(row=2, column=1, sticky=tk.W + tk.E, padx=5, pady=5)
         toolbar.columnconfigure(0, weight=1)  # Makes the user_input_entry expand horizontally.
-
-        self.user_input_entry = tk.Text(toolbar, wrap="word", height=6) # User-input
+        
+        # User Input 
+        self.user_input_entry = tk.Text(toolbar, wrap="word", height=6) 
         self.user_input_entry.grid(row=0, column=0,sticky=(tk.E,tk.W), padx=5, pady=5) 
 
         # Scroll Bar    
@@ -121,7 +117,7 @@ class Main(tk.Frame):
         input_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
         self.user_input_entry['yscrollcommand'] = input_scroll.set
 
-        # Button Frame
+        # Button Frame and associated Buttons 
         button_frame = tk.Frame(toolbar, bg="grey")
         button_frame.grid(row=0, column=2, sticky=tk.E)
 

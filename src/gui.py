@@ -19,7 +19,11 @@ class Main(tk.Frame):
         super().__init__(parent, **kwargs) 
         self.parent = parent 
         self.conversation_logic = conversation_logic 
-        self.filename = os.path.join('data', 'conversation.json') # initial conversation path 
+        self.filename = os.path.join('data', 'conversation.json') # initial conversation path
+
+        self.model_var = tk.StringVar(value=self.conversation_logic.model) # creates a selection of String data to get/set. 
+        
+        
         self.init_gui()
 
         if os.path.exists(self.filename):  # Check if the conversation file exists
@@ -67,7 +71,7 @@ class Main(tk.Frame):
 
     def create_left_frame(self):
         # Left Frame
-        left_frame = tk.Frame(self, bd=1, relief="flat") # add styling as needeed
+        left_frame = tk.Frame(self, bd=1, relief="flat",) # add styling as needeed
         left_frame.grid(column=0, row=1, rowspan=2, sticky=tk.W + tk.E + tk.N + tk.S)
         left_frame.rowconfigure(0, weight=1)
         
@@ -75,17 +79,19 @@ class Main(tk.Frame):
         title_frame = tk.Frame(left_frame, bd=1, relief="flat", bg='red')
         title_frame.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W + tk.E + tk.N)
 
-        title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16))
+        title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16), bg='red')
         title_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
-        self.model_var = tk.StringVar(value="Current Model: " + conversation_logic.config.get('model', 'Model Name')) # creates a selection of String data to get/set. 
-
         # Model Label
-        model_label = tk.Label(title_frame, textvariable=self.model_var, font=("Helvetica", 12))
+        model_label = tk.Label(title_frame, textvariable=self.model_var, font=("Helvetica", 12), bg='red')
         model_label.grid(row=1, column=0, padx=10, pady=10)
 
-        #additional_frame = tk.Frame(title_frame, bd=1, relief="flat", height=200, bg='blue')  # Set your desired height
-        #additional_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
+        history_frame = tk.Frame(left_frame, bd=1, relief="flat", height=250, bg='blue')  # Set your desired height
+        history_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
+
+        # History Label
+        conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bd=1, relief="flat")
+        conv_history_label.grid(row=0, column=0, padx=10, pady=10)
   
 
     def create_middle_frame(self):

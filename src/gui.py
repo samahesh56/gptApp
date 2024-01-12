@@ -22,8 +22,8 @@ class Main(tk.Frame):
         self.filename = os.path.join('data', 'conversation.json') # initial conversation path
 
         self.model_var = tk.StringVar(value=self.conversation_logic.model) # creates a selection of String data to get/set. 
-        
-        
+        #self.model_var.set() Implement set variables for first-time runs of the app. 
+
         self.init_gui()
 
         if os.path.exists(self.filename):  # Check if the conversation file exists
@@ -69,7 +69,13 @@ class Main(tk.Frame):
         menu_bar.add_command(label="Load", command=self.load_conversation)
         menu_bar.add_command(label="ChatGPT Settings", command=self.open_settings_menu)
 
-    def create_left_frame(self):
+    def create_left_frame(self): 
+        """ Creates the Left Frame, which holds the Title Frame and Conv History Frame.
+        
+        The Title frame holds dynamic labels, grid specs, and content/info specs.
+        
+        IMPORTANT: It may make more sense to create the left frame from within init_gui(),
+        and subsequently pass in the left_frame into this method. This can improve overall modularity. """
         # Left Frame
         left_frame = tk.Frame(self, bd=1, relief="flat",) # add styling as needeed
         left_frame.grid(column=0, row=1, rowspan=2, sticky=tk.W + tk.E + tk.N + tk.S)
@@ -83,8 +89,9 @@ class Main(tk.Frame):
         title_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
         # Model Label
-        model_label = tk.Label(title_frame, textvariable=self.model_var, font=("Helvetica", 12), bg='red')
-        model_label.grid(row=1, column=0, padx=10, pady=10)
+        self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg='red')
+        self.model_label.grid(row=1, column=0, padx=10, pady=10, in_=title_frame)
+        self.update_model_label()
 
         history_frame = tk.Frame(left_frame, bd=1, relief="flat", height=250, bg='blue')  # Set your desired height
         history_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
@@ -253,7 +260,7 @@ class Main(tk.Frame):
 
         configs = self.conversation_logic.config # loads the current configs in the user's configs.json 
 
-        # Function to update config on 'apply'
+        # Function to update config display on 'apply'
         def update_config():
             configs['model'] = self.model_var.get()
             configs['max_tokens'] = max_tokens_var.get()
@@ -267,6 +274,7 @@ class Main(tk.Frame):
                 json.dump(configs, f)
 
             self.conversation_logic.update_configs(configs) # updates settings in real-time
+            self.update_model_label()
             settings_window.destroy()  #Disable this if you want to close the settings menu open after apply is pressed. Otherwise, add an alert that says "Settings Changed"
 
         # Apply button
@@ -300,6 +308,11 @@ class Main(tk.Frame):
         api_key_entry = tk.Entry(settings_window, textvariable=api_key_var)
         api_key_entry.grid(row=3, column=1)
         api_key_var.set(configs.get('OPENAI_API_KEY'))
+
+    def update_model_label(self):
+        """Updates the model_label with the correct formatting"""
+        current_model_text = "Current Model: " + self.model_var.get()
+        self.model_label.config(text=current_model_text)
 
     def exit_application(self):
         # Save if needed, then exit

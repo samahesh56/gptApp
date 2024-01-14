@@ -64,5 +64,4 @@ class ConfigManager:
         self.config['OPENAI_API_KEY'] = new_configs.get('OPENAI_API_KEY', self.config['OPENAI_API_KEY'])
 
         # Update and add other settings as needed
-
         self.save_config()

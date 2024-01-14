@@ -19,12 +19,16 @@ class Main(tk.Frame):
         super().__init__(parent, **kwargs) 
         self.parent = parent 
         self.conversation_logic = conversation_logic 
-        self.filename = os.path.join('data', 'conversation.json') # initial conversation location 
+        self.filename = os.path.join('data', 'conversation.json') # initial conversation path
+
+        self.model_var = tk.StringVar(value=self.conversation_logic.model) # creates a selection of String data to get/set. 
+        #self.model_var.set() Implement set variables for first-time runs of the app. 
+
         self.init_gui()
 
         if os.path.exists(self.filename):  # Check if the conversation file exists
             self.conversation_logic.load_conversation()
-            self.update_conversation_text()
+            self.conversation_text.yview(tk.END, self.update_conversation_text()) # Sets the scrollbar behavior to the "lowest (end)", whilst updating the conversation text 
         else:
             print(f"Conversation file not found at {self.filename}")
 
@@ -33,8 +37,9 @@ class Main(tk.Frame):
         
         This includes setting up the grid elements for the menu bar, and other essential frames. """
         self.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
-        self.columnconfigure(0, weight=0)
+        self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
         self.rowconfigure(1, weight=1)
 
         # GUI layout
@@ -64,30 +69,47 @@ class Main(tk.Frame):
         menu_bar.add_command(label="Load", command=self.load_conversation)
         menu_bar.add_command(label="ChatGPT Settings", command=self.open_settings_menu)
 
-    def create_left_frame(self):
-        # Left Frame
-        left_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
-        left_frame.grid(column=0, row=1)
-        #left_frame.rowconfigure(0, weight=1)
-        #left_frame.columnconfigure(0, weight=0)
+    def create_left_frame(self): 
+        """ Creates the Left Frame, which holds the Title Frame and Conv History Frame.
         
-        label_text = "Hello, Left Frame!"
-        label = tk.Label(left_frame, text=label_text, font=("Helvetica", 14))
-        label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
+        The Title frame holds dynamic labels, grid specs, and content/info specs.
+        
+        IMPORTANT: It may make more sense to create the left frame from within init_gui(),
+        and subsequently pass in the left_frame into this method. This can improve overall modularity. """
+        # Left Frame
+        left_frame = tk.Frame(self, bd=1, relief="flat",) # add styling as needeed
+        left_frame.grid(column=0, row=1, rowspan=2, sticky=tk.W + tk.E + tk.N + tk.S)
+        left_frame.rowconfigure(0, weight=1)
+        
+        # Title Frame
+        title_frame = tk.Frame(left_frame, bd=1, relief="flat", bg='red')
+        title_frame.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W + tk.E + tk.N)
+
+        title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16), bg='red')
+        title_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
+
+        # Model Label
+        self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg='red')
+        self.model_label.grid(row=1, column=0, padx=10, pady=10, in_=title_frame)
+        self.update_model_label()
+
+        history_frame = tk.Frame(left_frame, bd=1, relief="flat", height=250, bg='blue')  # Set your desired height
+        history_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
+
+        # History Label
+        conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bd=1, relief="flat")
+        conv_history_label.grid(row=0, column=0, padx=10, pady=10)
+  
 
     def create_middle_frame(self):
         # Middle Frame
         middle_frame = tk.Frame(self, bd=2, relief="raised")
         middle_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
-
-        # Configure weight for the middle frame's column and row
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.columnconfigure(2, weight=1)
+        middle_frame.columnconfigure(0, weight=1)
         middle_frame.rowconfigure(0, weight=1)
 
         # Display the conversation text section
-        self.conversation_text = tk.Text(middle_frame, wrap="word", width=100, height=35)
+        self.conversation_text = tk.Text(middle_frame, wrap="word", width=100, height=30,  font=("Helvetica", 12))
         self.conversation_text.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Scroll Bar:     
@@ -112,8 +134,9 @@ class Main(tk.Frame):
         toolbar = tk.Frame(self, bd=1, bg="grey", height=50)
         toolbar.grid(row=2, column=1, sticky=tk.W + tk.E, padx=5, pady=5)
         toolbar.columnconfigure(0, weight=1)  # Makes the user_input_entry expand horizontally.
-
-        self.user_input_entry = tk.Text(toolbar, wrap="word", height=6) # User-input
+        
+        # User Input 
+        self.user_input_entry = tk.Text(toolbar, wrap="word", height=6) 
         self.user_input_entry.grid(row=0, column=0,sticky=(tk.E,tk.W), padx=5, pady=5) 
 
         # Scroll Bar    
@@ -121,7 +144,7 @@ class Main(tk.Frame):
         input_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
         self.user_input_entry['yscrollcommand'] = input_scroll.set
 
-        # Button Frame
+        # Button Frame and associated Buttons 
         button_frame = tk.Frame(toolbar, bg="grey")
         button_frame.grid(row=0, column=2, sticky=tk.E)
 
@@ -156,7 +179,7 @@ class Main(tk.Frame):
             self.conversation_text.insert(tk.END, f"GPT: {gpt_response}\n\n")
             self.conversation_text.see(tk.END)
             
-            # Update Status Bar Information  
+            # Status bar information  
             self.status_var.set(f"Call Successful! "
                 f"Tokens Used: {self.conversation_logic.total_tokens_used} | "
                 f"Input Tokens: {self.conversation_logic.input_tokens} | "
@@ -167,7 +190,7 @@ class Main(tk.Frame):
             # Display the error message in the GUI
             if "401" or "APIConnectionError" in error_response:
                 messagebox.showinfo("Authentication Error", "Invalid or expired API key. Please check your API key.")
-                self.status_var.set(f"API Call Failed! Please check your API Key, or other settngs. Occurred At: {current_time} ")
+                self.status_var.set(f"API Call Failed! Please check your API Key, or other settngs. Time: {current_time} ")
             
     def on_reset_button_click(self):
         """Handles the action when the Reset Conversation button is clicked.
@@ -237,9 +260,9 @@ class Main(tk.Frame):
 
         configs = self.conversation_logic.config # loads the current configs in the user's configs.json 
 
-        # Function to update config on 'apply'
+        # Function to update config display on 'apply'
         def update_config():
-            configs['model'] = model_var.get()
+            configs['model'] = self.model_var.get()
             configs['max_tokens'] = max_tokens_var.get()
             configs['system_message'] = system_message_var.get()
             configs['OPENAI_API_KEY'] = api_key_var.get()
@@ -251,6 +274,7 @@ class Main(tk.Frame):
                 json.dump(configs, f)
 
             self.conversation_logic.update_configs(configs) # updates settings in real-time
+            self.update_model_label()
             settings_window.destroy()  #Disable this if you want to close the settings menu open after apply is pressed. Otherwise, add an alert that says "Settings Changed"
 
         # Apply button
@@ -259,11 +283,10 @@ class Main(tk.Frame):
         
         # Model selection
         tk.Label(settings_window, text='Model:').grid(row=0, column=0)
-        model_var = tk.StringVar() # creates a selection of String data to get/set. 
-        model_select = ttk.Combobox(settings_window, textvariable=model_var) # Dropdown menu for changing models. Text is held in model_var
+        model_select = ttk.Combobox(settings_window, textvariable=self.model_var) # Dropdown menu for changing models. Text is held in model_var
         model_select['values'] = ('gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4')  # Set available models here 
         model_select.grid(row=0, column=1) # assigns it to column 1. 
-        model_var.set(configs.get('model'))
+        self.model_var.set(configs.get('model'))
 
         # Max Tokens
         tk.Label(settings_window, text='Max Tokens:').grid(row=1, column=0)
@@ -285,6 +308,11 @@ class Main(tk.Frame):
         api_key_entry = tk.Entry(settings_window, textvariable=api_key_var)
         api_key_entry.grid(row=3, column=1)
         api_key_var.set(configs.get('OPENAI_API_KEY'))
+
+    def update_model_label(self):
+        """Updates the model_label with the correct formatting"""
+        current_model_text = "Current Model: " + self.model_var.get()
+        self.model_label.config(text=current_model_text)
 
     def exit_application(self):
         # Save if needed, then exit

@@ -1,4 +1,4 @@
-import json, tiktoken, os 
+import logging, json, tiktoken, os 
 from openai import OpenAI, APIConnectionError, AuthenticationError
 from configuration import ConfigManager
 
@@ -7,7 +7,7 @@ class ConversationLogic:
         """Initializes the ConversationLogic object.
 
         This constructor sets up the configuration settings, the user's API key, and other requirements/tools for communication with OpenAI's GPT API. """
-
+        self.setup_logging()
         self.config_manager = config_manager
         self.config=self.config_manager.config # set default config 
 
@@ -22,6 +22,11 @@ class ConversationLogic:
         self.user_message = self.config.get('user_message','What can you help me with today?') 
         self.assistant_message = self.config.get('assistant_message', 'Hi, how can I help you today?')
         self.max_tokens = self.config.get('max_tokens', 750)
+
+    def setup_logging(self):
+        """ Logging config for ConversationLogic"""
+        logging.getLogger(__name__).info("Conversation logic logging setup.")
+        # add configs as needed 
 
     def chat_gpt(self, user_input):
         """Performs the API call, and inputs the given user input from the GUI to perform the call.
@@ -79,15 +84,27 @@ class ConversationLogic:
             self.response_tokens = response.usage.completion_tokens
             self.model_type = response.model
             self.stop_reason = response.choices[0].finish_reason
-            print(f"Total tokens used for API call: {self.total_tokens_used} | Total Input: {self.input_tokens} | Total Response: {self.response_tokens}\nModel Used: {self.model_type} | API Stop Reason: {self.stop_reason}")
-
+            
+            # Log API and ChatGPT Information 
+            api_log = (
+                f"Total tokens used for API call: {self.total_tokens_used} | "
+                f"Total Input: {self.input_tokens} | "
+                f"Total Response: {self.response_tokens}\n"
+                f"Model Used: {self.model_type} | "
+                f"API Stop Reason: {self.stop_reason}"
+            )
+            logging.info(api_log)
+            print(api_log)
+            
             response = response.choices[0].message.content # this is the API call to get the latest gpt response 
             self.update_conversation(user_input, response) # updates the conversation with the latest input and response
 
             return response, None # response is returned to display in gui, None is returned to signal no errors. 
         except AuthenticationError as auth_error:
+            logging.error(f"Authentication error: {auth_error}")    
             return None, (str(auth_error))
         except APIConnectionError as conn_error:
+            logging.error(f"API connection error: {conn_error}")
             return None, (str(conn_error))
 
     def load_conversation(self, filename=None): 

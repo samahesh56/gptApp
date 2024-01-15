@@ -242,6 +242,7 @@ class Main(tk.Frame):
         if filename: 
             self.conversation_logic.filename = filename # set the given filename to the filename in ConversationLogic() class to dynamically change filenames.
             self.conversation_logic.load_conversation(filename) # load the given file's conversation
+            self.filename_var.set(filename)
             self.update_title_labels()
             self.update_conversation_text() # display the conversation in the gui.
 
@@ -332,7 +333,7 @@ class Main(tk.Frame):
         self.max_tokens_label.config(text=current_max_tokens_text)
 
         # Selected File: 
-        current_file_text = "Selected File: " + os.path.basename(self.conversation_logic.filename)
+        current_file_text = "Selected File: " + os.path.basename(self.filename_var.get())
         self.filename_label.config(text=current_file_text)
 
     def exit_application(self):

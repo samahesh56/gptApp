@@ -21,18 +21,21 @@ class Main(tk.Frame):
         self.conversation_logic = conversation_logic 
         self.filename = os.path.join('data', 'conversation.json') # initial conversation path
 
-        self.model_var = tk.StringVar(value=self.conversation_logic.model) # creates a selection of String data to get/set. 
-        self.max_tokens_var = tk.IntVar(value=self.conversation_logic.max_tokens)
-        self.filename_var = tk.StringVar(value=self.conversation_logic.filename)
-        #self.model_var.set() Implement set variables for first-time runs of the app. 
+        self.model_var = tk.StringVar()
+        self.model_var.set(self.conversation_logic.model)
+
+        self.max_tokens_var = tk.IntVar()
+        self.max_tokens_var.set(self.conversation_logic.max_tokens)
+
+        self.filename_var = tk.StringVar()
+        self.filename_var.set(self.conversation_logic.filename) 
 
         self.init_gui()
 
-        if os.path.exists(self.filename):  # Check if the conversation file exists
-            self.conversation_logic.load_conversation()
-            self.conversation_text.yview(tk.END, self.update_conversation_text()) # Sets the scrollbar behavior to the "lowest (end)", whilst updating the conversation text 
-        else:
-            print(f"Conversation file not found at {self.filename}")
+        # Update conversation text if the file exists
+        loaded_conversation = self.conversation_logic.load_conversation(filename=self.filename)
+        if loaded_conversation:
+            self.conversation_text.yview(tk.END, self.update_conversation_text())
 
     def init_gui(self):
         """Initializes the graphical user interface (GUI) elements

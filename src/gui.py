@@ -22,6 +22,8 @@ class Main(tk.Frame):
         self.filename = os.path.join('data', 'conversation.json') # initial conversation path
 
         self.model_var = tk.StringVar(value=self.conversation_logic.model) # creates a selection of String data to get/set. 
+        self.max_tokens_var = tk.IntVar(value=self.conversation_logic.max_tokens)
+        self.filename_var = tk.StringVar(value=self.conversation_logic.filename)
         #self.model_var.set() Implement set variables for first-time runs of the app. 
 
         self.init_gui()
@@ -91,7 +93,14 @@ class Main(tk.Frame):
         # Model Label
         self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg='red')
         self.model_label.grid(row=1, column=0, padx=10, pady=10, in_=title_frame)
-        self.update_model_label()
+
+        # Max Tokens Label
+        self.max_tokens_label = tk.Label(title_frame, font=("Helvetica", 12))
+        self.max_tokens_label.grid(row=2, column=0, padx=10, pady=10, in_=title_frame)
+
+        # Filename Label
+        self.filename_label = tk.Label(title_frame, font=("Helvetica", 12))
+        self.filename_label.grid(row=3, column=0, padx=10, pady=10, in_=title_frame)
 
         history_frame = tk.Frame(left_frame, bd=1, relief="flat", height=250, bg='blue')  # Set your desired height
         history_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
@@ -99,6 +108,8 @@ class Main(tk.Frame):
         # History Label
         conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bd=1, relief="flat")
         conv_history_label.grid(row=0, column=0, padx=10, pady=10)
+
+        self.update_title_labels()
   
 
     def create_middle_frame(self):
@@ -231,6 +242,8 @@ class Main(tk.Frame):
         if filename: 
             self.conversation_logic.filename = filename # set the given filename to the filename in ConversationLogic() class to dynamically change filenames.
             self.conversation_logic.load_conversation(filename) # load the given file's conversation
+            self.filename_var.set(filename)
+            self.update_title_labels()
             self.update_conversation_text() # display the conversation in the gui.
 
     def save_conversation(self):
@@ -263,7 +276,7 @@ class Main(tk.Frame):
         # Function to update config display on 'apply'
         def update_config():
             configs['model'] = self.model_var.get()
-            configs['max_tokens'] = max_tokens_var.get()
+            configs['max_tokens'] = self.max_tokens_var.get()
             configs['system_message'] = system_message_var.get()
             configs['OPENAI_API_KEY'] = api_key_var.get()
 
@@ -274,7 +287,7 @@ class Main(tk.Frame):
                 json.dump(configs, f)
 
             self.conversation_logic.update_configs(configs) # updates settings in real-time
-            self.update_model_label()
+            self.update_title_labels()
             settings_window.destroy()  #Disable this if you want to close the settings menu open after apply is pressed. Otherwise, add an alert that says "Settings Changed"
 
         # Apply button
@@ -290,10 +303,9 @@ class Main(tk.Frame):
 
         # Max Tokens
         tk.Label(settings_window, text='Max Tokens:').grid(row=1, column=0)
-        max_tokens_var = tk.IntVar() # holds the max token entry as an int
-        max_tokens_entry = tk.Entry(settings_window, textvariable=max_tokens_var)
+        max_tokens_entry = tk.Entry(settings_window, textvariable=self.max_tokens_var)
         max_tokens_entry.grid(row=1, column=1)
-        max_tokens_var.set(configs.get('max_tokens'))  # Sets config max tokens
+        self.max_tokens_var.set(configs.get('max_tokens'))  # Sets config max tokens
 
         # System Message
         tk.Label(settings_window, text='System Message:').grid(row=2, column=0)
@@ -309,10 +321,20 @@ class Main(tk.Frame):
         api_key_entry.grid(row=3, column=1)
         api_key_var.set(configs.get('OPENAI_API_KEY'))
 
-    def update_model_label(self):
+    def update_title_labels(self):
         """Updates the model_label with the correct formatting"""
-        current_model_text = "Current Model: " + self.model_var.get()
+
+        # Selected Model Label 
+        current_model_text = "Selected Model: " + self.model_var.get()
         self.model_label.config(text=current_model_text)
+        
+        # Token Limit Label 
+        current_max_tokens_text = "Token Limit: " + str(self.max_tokens_var.get())
+        self.max_tokens_label.config(text=current_max_tokens_text)
+
+        # Selected File: 
+        current_file_text = "Selected File: " + os.path.basename(self.filename_var.get())
+        self.filename_label.config(text=current_file_text)
 
     def exit_application(self):
         # Save if needed, then exit

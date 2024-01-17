@@ -21,18 +21,17 @@ class Main(tk.Frame):
         self.conversation_logic = conversation_logic 
         self.filename = os.path.join('data', 'conversation.json') # initial conversation path
 
-        self.model_var = tk.StringVar(value=self.conversation_logic.model) # creates a selection of String data to get/set. 
+        # Tkinter variables for getting/setting dynamic information 
+        self.model_var = tk.StringVar(value=self.conversation_logic.model)
         self.max_tokens_var = tk.IntVar(value=self.conversation_logic.max_tokens)
         self.filename_var = tk.StringVar(value=self.conversation_logic.filename)
-        #self.model_var.set() Implement set variables for first-time runs of the app. 
 
         self.init_gui()
 
-        if os.path.exists(self.filename):  # Check if the conversation file exists
-            self.conversation_logic.load_conversation()
-            self.conversation_text.yview(tk.END, self.update_conversation_text()) # Sets the scrollbar behavior to the "lowest (end)", whilst updating the conversation text 
-        else:
-            print(f"Conversation file not found at {self.filename}")
+        # Update conversation text if the file exists
+        loaded_conversation = self.conversation_logic.load_conversation(filename=self.filename)
+        if loaded_conversation:
+            self.conversation_text.yview(tk.END, self.update_conversation_text())
 
     def init_gui(self):
         """Initializes the graphical user interface (GUI) elements
@@ -108,6 +107,35 @@ class Main(tk.Frame):
         # History Label
         conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bd=1, relief="flat")
         conv_history_label.grid(row=0, column=0, padx=10, pady=10)
+
+        self.treeview = ttk.Treeview(history_frame)
+        self.treeview["columns"] = ("filename")
+        self.treeview.column("#0", width=0, minwidth=0, stretch=False)
+        self.treeview.column("filename", width=150, minwidth=150, stretch=True)
+        self.treeview.heading("filename", text="Filename", anchor=tk.W)
+
+        # Directory with conversation files
+        convo_files = [f for f in os.listdir(self.conversation_logic.directory) if f.endswith('.json')]
+        # Populating Treeview
+        for filename in convo_files:
+            self.treeview.insert("", tk.END, values=(filename,))
+        
+        # Function to load conversation when a filename is double clicked
+        def on_double_click(event):
+            item_id = self.treeview.focus()
+            filename = self.treeview.item(item_id, "values")[0]
+            full_path = os.path.join("data", filename)
+            # Put your code here to load the conversation from filename into your chatbox
+            #self.conversation_logic.filename = full_path
+            self.conversation_logic.load_conversation(full_path)
+            self.filename_var.set(filename)
+            self.update_title_labels()
+            self.update_conversation_text()
+        # Binding the double click event
+        self.treeview.bind("<Double-1>", on_double_click)
+
+        # Add the Treeview into the history frame
+        self.treeview.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
 
         self.update_title_labels()
   
@@ -240,7 +268,6 @@ class Main(tk.Frame):
             filetypes=(("JSON files", "*.json"), ("All files", "*.*")) 
         )
         if filename: 
-            self.conversation_logic.filename = filename # set the given filename to the filename in ConversationLogic() class to dynamically change filenames.
             self.conversation_logic.load_conversation(filename) # load the given file's conversation
             self.filename_var.set(filename)
             self.update_title_labels()

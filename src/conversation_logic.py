@@ -10,6 +10,7 @@ class ConversationLogic:
         self.setup_logging()
         self.config_manager = config_manager
         self.config=self.config_manager.config # set default config 
+        self.directory = os.path.join("data", "")
 
         # starts an instance of OpenAI's API client using the api key
         self.api_key=self.config.get('OPENAI_API_KEY', 'YOUR_DEFAULT_API_KEY_HERE')

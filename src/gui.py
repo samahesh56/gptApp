@@ -112,45 +112,27 @@ class Main(tk.Frame):
         # Creates a Treeview within the history frame
         self.conversation_treeview = ttk.Treeview(history_frame)
         self.conversation_treeview.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
-        self.configure_conversation_treeview()
-
-        self.update_title_labels()
-
-    def configure_conversation_treeview(self):
-        """Configures the conversation history Treeview widget."""
-
         self.conversation_treeview["columns"] = ("filename") # define columns + column configs below 
         self.conversation_treeview.column("#0", width=0, minwidth=0, stretch=False) 
         self.conversation_treeview.column("filename", width=150, minwidth=150, stretch=True)
         self.conversation_treeview.heading("filename", text="Filename:", anchor=tk.W)
+        self.configure_conversation_treeview() # calls config method for conversation state management in the gui 
 
-        # Retrieves all current conversation files in the data/ directory and holds its as a list.
-        convo_files = [f for f in os.listdir(self.conversation_logic.directory) if f.endswith('.json')]
-        
-        # Populating the treeview with given filenames 
-        for filename in convo_files:
-            self.conversation_treeview.insert("", tk.END, values=(filename,))
-        
-        # Function to load conversation when a filename is double clicked
-        def on_double_click(event):
-            item_id = self.conversation_treeview.focus() # holds ID of selected item 
-            selected_filename = self.conversation_treeview.item(item_id, "values")[0] # retrieve filename of given id's associated value (file) 
-            full_path = os.path.join("data", selected_filename) 
-            self.conversation_logic.load_conversation(full_path)
-            self.filename_var.set(self.conversation_logic.filename)
-            self.update_title_labels()
-            self.load_conversation_text()
-        
-        self.conversation_treeview.bind("<Double-1>", on_double_click) # Bind double click event (double-1 is event)
+        self.update_title_labels()
 
+    def configure_conversation_treeview(self):
+        """Configures the conversation history display (Treeview widget)."""
+        
         def remove_conversation():
             # Get the selected item
             item_id = self.conversation_treeview.focus()
             if item_id:
-                filename = self.conversation_treeview.item(item_id, 'values')[0]
-                if messagebox.askyesno("Remove Conversation", f"Are you sure you want to remove '{filename}'?"):
-                    # Add code here to delete the JSON file
-                    refresh_treeview()
+                selected_filename = self.conversation_treeview.item(item_id, 'values')[0]
+                full_path = os.path.join("data", selected_filename) 
+                if messagebox.askyesno("Remove Conversation", f"Are you sure you want to remove '{selected_filename}'?"):
+                    self.conversation_logic.remove_conversation_from_file(full_path)
+                    self.load_conversation_text()
+                    self.refresh_treeview()
 
         def rename_conversation(item_id):
             # Get the current filename
@@ -158,14 +140,11 @@ class Main(tk.Frame):
             new_name = simpledialog.askstring("Rename Conversation", "Enter new conversation filename:", initialvalue=current_name)
             if new_name:
                 # Add code here to rename the JSON file
-                refresh_treeview()
+                self.refresh_treeview()
 
-        def refresh_treeview():
-            # Refresh the treeview after add/remove/rename operations
-            self.conversation_treeview.delete(*self.conversation_treeview.get_children())
-            # Repopulate treeview (similar to the initial population)
-
-        # Right-click menu
+        self.refresh_treeview()
+            
+        # Right-click conversation menu options 
         conv_menu = tk.Menu(self.conversation_treeview, tearoff=0)
         conv_menu.add_command(label="Remove", command=remove_conversation)
         conv_menu.add_command(label="Rename", command=lambda: rename_conversation(self.conversation_treeview.focus()))
@@ -178,7 +157,17 @@ class Main(tk.Frame):
             self.conversation_treeview.selection_set(item_id)
 
         self.conversation_treeview.bind("<Button-3>", on_right_click) # <Button-2> or <Button-3> depending on platform
-    
+
+        # Function to load conversation when a filename is double clicked
+        def on_double_click(event):
+            item_id = self.conversation_treeview.focus() # holds ID of selected item 
+            selected_filename = self.conversation_treeview.item(item_id, "values")[0] # retrieve filename of given id's associated value (file) 
+            full_path = os.path.join("data", selected_filename) 
+            self.conversation_logic.load_conversation(full_path)
+            self.load_conversation_text()
+        
+        self.conversation_treeview.bind("<Double-1>", on_double_click) # Bind double click event (double-1 is event)
+
     def create_middle_frame(self):
         # Middle Frame
         middle_frame = tk.Frame(self, bd=2, relief="raised")
@@ -239,7 +228,6 @@ class Main(tk.Frame):
         self.status_bar = tk.Label(toolbar, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W )
         self.status_bar.grid(row=1, column=0, columnspan=2, sticky=tk.W + tk.E, padx=5, pady=5)
 
-
     def on_send_button_click(self):
         """Handles the action when the Send button is clicked.
         
@@ -283,8 +271,8 @@ class Main(tk.Frame):
 
         conversation = self.conversation_logic.load_conversation(self.conversation_logic.filename)  # loads the current file (and filename) being used
         messages = conversation.get('messages', [])
-
         self.conversation_text.delete(1.0, tk.END)
+        self.update_title_labels()
 
         for message in messages[2:]:  # Assuming you want to skip the system and user messages to be displayed in the text-field
             role = message["role"]
@@ -326,6 +314,7 @@ class Main(tk.Frame):
 
             current_messages = self.conversation_logic.load_conversation().get('messages', []) # Methods used to save the conversation. Load the current conversation, and save it to file. 
             self.conversation_logic.save_conversation_to_file(filename, current_messages)
+            self.refresh_treeview()
             messagebox.showinfo("Save", "The conversation has been saved.")
 
     def open_settings_menu(self):
@@ -347,10 +336,6 @@ class Main(tk.Frame):
             configs['OPENAI_API_KEY'] = api_key_var.get()
 
             # ... Update other settings here
-
-            # Save back to configs.json
-            with open('configs.json', 'w') as f:
-                json.dump(configs, f)
 
             self.conversation_logic.update_configs(configs) # updates settings in real-time
             self.update_title_labels()
@@ -391,16 +376,29 @@ class Main(tk.Frame):
         """Updates the model_label with the correct formatting"""
 
         # Selected Model Label 
+        self.model_var.set(self.conversation_logic.model)
         current_model_text = "Selected Model: " + self.model_var.get()
         self.model_label.config(text=current_model_text)
         
         # Token Limit Label 
+        self.max_tokens_var.set(self.conversation_logic.max_tokens)
         current_max_tokens_text = "Token Limit: " + str(self.max_tokens_var.get())
         self.max_tokens_label.config(text=current_max_tokens_text)
 
         # Selected File: 
+        self.filename_var.set(self.conversation_logic.filename)
         current_file_text = "Selected File: " + os.path.basename(self.filename_var.get())
         self.filename_label.config(text=current_file_text)
+
+    def refresh_treeview(self):
+            # Refresh the treeview after add/remove/rename operations
+            self.conversation_treeview.delete(*self.conversation_treeview.get_children())
+            # Retrieves all current conversation files in the data/ directory and holds its as a list.
+            convo_files = [f for f in os.listdir(self.conversation_logic.directory) if f.endswith('.json')]
+            
+            # Populating the treeview with given filenames 
+            for filename in convo_files:
+                self.conversation_treeview.insert("", tk.END, values=(filename,))
 
     def exit_application(self):
         # Save if needed, then exit

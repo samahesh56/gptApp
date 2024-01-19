@@ -59,7 +59,7 @@ class Main(tk.Frame):
         # File Menu (Menu Toolbar)
         file_menu = tk.Menu(menu_bar, tearoff=0) 
         file_menu.add_command(label="New Conversation", command=self.new_conversation)
-        file_menu.add_command(label="Open Conversation", command=self.load_conversation_from_file)
+        file_menu.add_command(label="Import...", command=self.import_conversation)
         file_menu.add_command(label="Save As...", command=self.save_conversation)
         file_menu.add_separator()
         file_menu.add_command(label="Settings", command=self.open_settings_menu)
@@ -67,7 +67,7 @@ class Main(tk.Frame):
         
         # Menu Toolbar Commands
         menu_bar.add_cascade(label="File", menu=file_menu)
-        menu_bar.add_command(label="Load", command=self.load_conversation_from_file)
+        menu_bar.add_command(label="Import", command=self.import_conversation)
         menu_bar.add_command(label="ChatGPT Settings", command=self.open_settings_menu)
 
     def create_left_frame(self): 
@@ -283,20 +283,24 @@ class Main(tk.Frame):
         messagebox.showinfo("New Conversation", "Create a new conversation")
         # Implement the logic for creating a new conversation in ConversationLogic
 
-    def load_conversation_from_file(self):
-        """ Opens the data/ directory to view and load a .json conversation.
+    def import_conversation(self):
+        """ Opens the data/directory to view and load a .json conversation.
         
-        filedialog loads a window to choose from existing .json files, thus returning a filename when chosen
+        filedialog loads a window to choose from existing .json files in data/ directory, thus returning a filename when chosen
         If the loaded filename is different from the default filename (which is set to data/conversation.jon), the filename is changed in real time """
 
         filename = filedialog.askopenfilename(  
-            initialdir="data/conversation", # where to open to 
-            title="Open Conversation",
+            initialdir=self.conversation_logic.directory, # where to open to 
+            title="Import Conversation",
             filetypes=(("JSON files", "*.json"), ("All files", "*.*")) 
-        )
+        ) 
+
+        base_filepath = os.path.basename(filename)
+        fullpath = os.path.join(self.conversation_logic.directory, base_filepath)
+
         if filename: 
-            self.conversation_logic.load_conversation(filename) # load the given file's conversation
-            self.filename_var.set(filename)
+            self.conversation_logic.load_conversation(fullpath) # load the given file's conversation
+            self.filename_var.set(fullpath)
             self.update_title_labels()
             self.load_conversation_text() # display the conversation in the gui.
 
@@ -304,15 +308,18 @@ class Main(tk.Frame):
         """Opens a window to "Save As" the current conversation to a JSON file."""
 
         filename = filedialog.asksaveasfilename(
-            initialdir="data/",
+            initialdir=self.conversation_logic.directory,
             title="Save Conversation",
             filetypes=(("JSON files", "*.json"), ("All files", "*.*"))
         )
+        
         if filename:
             if not filename.endswith(".json"):
+                print("Error in saving conversations. Fix save directory to accurately open to saved conversation location")
                 filename += ".json"
 
-            current_messages = self.conversation_logic.load_conversation().get('messages', []) # Methods used to save the conversation. Load the current conversation, and save it to file. 
+            # Methods used to save the conversation. Load the current conversation, and save it to file. 
+            current_messages = self.conversation_logic.load_conversation().get('messages', []) 
             self.conversation_logic.save_conversation_to_file(filename, current_messages)
             self.refresh_treeview()
             messagebox.showinfo("Save", "The conversation has been saved.")

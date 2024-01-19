@@ -127,6 +127,9 @@ class ConversationLogic:
                 loaded_conversation = json.load(file) 
                 if filename != self.filename: # if the given file path (conversation) does not match the current file path, a new file path is set to the filepath.
                     self.filename = filename  # Update the filepath if a different file is loaded
+                    print("Loaded File At: " + self.filename)
+                    configs = {'filename': os.path.join("", self.filename)}
+                    self.update_configs(configs)
                 return loaded_conversation # returns the given conversation of the file 
         except FileNotFoundError:  
             print(f"Conversation file not found.")

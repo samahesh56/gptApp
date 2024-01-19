@@ -120,6 +120,9 @@ class ConversationLogic:
             filename = self.filename # if there is no file found, it is given the configured path. Its default value is data\conversation.json 
 
         try:
+            if not filename.startswith(os.path.join("data", "")):
+                logging.error(f"Authentication error: {ValueError}") 
+                raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
             with open(filename, 'r') as file: 
                 loaded_conversation = json.load(file) 
                 if filename != self.filename: # if the given file path (conversation) does not match the current file path, a new file path is set to the filepath.

@@ -27,7 +27,7 @@ class ConversationLogic:
     def setup_logging(self):
         """ Logging config for ConversationLogic"""
         logging.getLogger(__name__).info("Conversation logic logging setup.")
-        # add configs as needed 
+        # add logging configs as needed 
 
     def chat_gpt(self, user_input):
         """Performs the API call, and inputs the given user input from the GUI to perform the call.
@@ -44,7 +44,7 @@ class ConversationLogic:
             Content: specifies the context of the message given by the entity (role)
 
         Remember that the GPT reads the length of 'messages' when trying to providing responses. Basic conversation trimming is performed to reduce the size of input calls in lengthy conversations.       
-        Below is an example message '[]' held in the .json 
+        Below is an example message '[]' held in a .json file. 
             {
                 "messages": [
                     {
@@ -120,13 +120,16 @@ class ConversationLogic:
             filename = self.filename # if there is no file found, it is given the configured path. Its default value is data\conversation.json 
 
         try:
+            if not filename.startswith(os.path.join("data", "")):
+                logging.error(f"Value error: {ValueError}") 
+                raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
             with open(filename, 'r') as file: 
                 loaded_conversation = json.load(file) 
                 if filename != self.filename: # if the given file path (conversation) does not match the current file path, a new file path is set to the filepath.
                     self.filename = filename  # Update the filepath if a different file is loaded
                 return loaded_conversation # returns the given conversation of the file 
         except FileNotFoundError:  
-            print(f"Conversation file not found. Creating a new one.")
+            print(f"Conversation file not found.")
             # implement logic for fixing errors in finding the default conversation.json file. 
 
     def update_conversation(self, user_input, gpt_response):
@@ -153,6 +156,20 @@ class ConversationLogic:
 
         with open(filename, 'w') as file:
             json.dump({"messages": messages}, file)
+
+    def remove_conversation_from_file(self, filename):
+        """ Remove the selected JSON file from data directory"""
+
+        try:
+            if not os.path.exists(filename):
+                logging.error(f"Value error: {ValueError}") 
+                raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
+            else:
+                configs = {'filename': os.path.join('data', 'conversation.json')}
+                self.update_configs(configs)
+                os.remove(filename)
+        except FileNotFoundError:  
+            print(f"Conversation file not found.")
 
     def reset_conversation(self):
         """Reset the conversation to a default prompt state.
@@ -220,13 +237,15 @@ class ConversationLogic:
         """Abstract class for updating the configs through the config manager
         
         Config file is changed within configuration.py. 
-        Add new or updated self. variabvles here to implement the config changes.
+        Add new or updated self. variables here to implement the config changes.
         """
         self.config_manager.update_configs(new_settings)
         self.client = OpenAI(api_key=self.config.get('OPENAI_API_KEY')) # client is initiated with new API key. 
         self.model = self.config.get('model') 
         self.system_message = self.config.get('system_message') 
         self.max_tokens = self.config.get('max_tokens')
+        self.filename = self.config.get('filename')
+
         # Update any other logic in ConversationLogic as needed
         
     

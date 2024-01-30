@@ -348,7 +348,7 @@ class Main(tk.Frame):
         # Model selection
         tk.Label(settings_window, text='Model:').grid(row=0, column=0)
         model_select = ttk.Combobox(settings_window, textvariable=self.model_var) # Dropdown menu for changing models. Text is held in model_var
-        model_select['values'] = ('gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4')  # Set available models here 
+        model_select['values'] = ('gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4')  # Set available models here 
         model_select.grid(row=0, column=1) # assigns it to column 1. 
         self.model_var.set(configs.get('model'))
 

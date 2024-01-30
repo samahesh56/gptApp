@@ -31,7 +31,7 @@ class Main(tk.Frame):
         # Update conversation text if the file exists
         loaded_conversation = self.conversation_logic.load_conversation(filename=self.filename)
         if loaded_conversation:
-            self.conversation_text.yview(tk.END, self.load_conversation_text())
+            self.conversation_text.yview(tk.END, self.load_conversation_text(loaded_conversation))
 
     def init_gui(self):
         """Initializes the graphical user interface (GUI) elements
@@ -163,8 +163,8 @@ class Main(tk.Frame):
             item_id = self.conversation_treeview.focus() # holds ID of selected item 
             selected_filename = self.conversation_treeview.item(item_id, "values")[0] # retrieve filename of given id's associated value (file) 
             full_path = os.path.join("data", selected_filename) 
-            self.conversation_logic.load_conversation(full_path)
-            self.load_conversation_text()
+            curr_conversation = self.conversation_logic.load_conversation(full_path)
+            self.load_conversation_text(curr_conversation)
         
         self.conversation_treeview.bind("<Double-1>", on_double_click) # Bind double click event (double-1 is event)
 
@@ -266,10 +266,9 @@ class Main(tk.Frame):
         self.conversation_logic.reset_conversation() # reset function call
         self.conversation_text.delete("1.0", tk.END)
 
-    def load_conversation_text(self):
+    def load_conversation_text(self, conversation):
         """Updates the conversation text in the GUI based on the loaded conversation from a file"""
 
-        conversation = self.conversation_logic.load_conversation(self.conversation_logic.filename)  # loads the current file (and filename) being used
         messages = conversation.get('messages', [])
         self.conversation_text.delete(1.0, tk.END)
         self.update_title_labels()
@@ -295,10 +294,10 @@ class Main(tk.Frame):
             filetypes=(("JSON files", "*.json"), ("All files", "*.*")) 
         )
         if filename: 
-            self.conversation_logic.load_conversation(filename) # load the given file's conversation
+            curr_conversation = self.conversation_logic.load_conversation(filename) # load the given file's conversation
             self.filename_var.set(filename)
             self.update_title_labels()
-            self.load_conversation_text() # display the conversation in the gui.
+            self.load_conversation_text(curr_conversation) # display the conversation in the gui.
 
     def save_conversation(self):
         """Opens a window to "Save As" the current conversation to a JSON file."""

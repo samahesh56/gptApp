@@ -107,6 +107,13 @@ class ConversationLogic:
         except APIConnectionError as conn_error:
             logging.error(f"API connection error: {conn_error}")
             return None, (str(conn_error))
+        
+    def set_filename(self, new_filename):
+        if not new_filename.startswith(os.path.join("data", "")):
+            logging.error("ValueError: Invalid filepath. Must be within the 'data/' directory.")
+            raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
+        self.filename = new_filename
+        print(f"Filename updated: {self.filename}")
 
     def load_conversation(self, filename=None): 
         """Attempts to load the conversation from a given .json file 
@@ -120,14 +127,10 @@ class ConversationLogic:
             filename = self.filename # if there is no file found, it is given the configured path. Its default value is data\conversation.json 
 
         try:
-            if not filename.startswith(os.path.join("data", "")):
-                logging.error(f"Value error: {ValueError}") 
-                raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
             with open(filename, 'r') as file: 
                 loaded_conversation = json.load(file) 
-                if filename != self.filename: # if the given file path (conversation) does not match the current file path, a new file path is set to the filepath.
-                    self.filename = filename  # Update the filepath if a different file is loaded
-                return loaded_conversation # returns the given conversation of the file 
+                self.set_filename(filename)  # Update the filepath if a different file is loaded (uses setter method)
+                return loaded_conversation
         except FileNotFoundError:  
             print(f"Conversation file not found.")
             # implement logic for fixing errors in finding the default conversation.json file. 

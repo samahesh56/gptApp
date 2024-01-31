@@ -28,7 +28,7 @@ class Main(tk.Frame):
 
         self.init_gui()
 
-        # Update conversation text if the file exists
+        # load the config's initial conversation file if found 
         loaded_conversation = self.conversation_logic.load_conversation(filename=self.filename)
         if loaded_conversation:
             self.conversation_text.yview(tk.END, self.load_conversation_text(loaded_conversation))
@@ -105,6 +105,10 @@ class Main(tk.Frame):
         self.filename_label = tk.Label(title_frame, font=("Helvetica", 12))
         self.filename_label.grid(row=3, column=0, padx=10, pady=10, in_=title_frame)
 
+        # New Conversation Button
+        self.new_chat_button = tk.Button(title_frame, text="New Chat", command=self.new_conversation)
+        self.new_chat_button.grid(row=4, column=0, padx=10, pady=10, in_=title_frame)
+
         # History Label
         conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bd=1, relief="flat")
         conv_history_label.grid(row=0, column=0, padx=10, pady=10)
@@ -130,8 +134,8 @@ class Main(tk.Frame):
                 selected_filename = self.conversation_treeview.item(item_id, 'values')[0]
                 full_path = os.path.join("data", selected_filename) 
                 if messagebox.askyesno("Remove Conversation", f"Are you sure you want to remove '{selected_filename}'?"):
-                    self.conversation_logic.remove_conversation_from_file(full_path)
-                    self.load_conversation_text()
+                    curr_conversation = self.conversation_logic.remove_conversation_from_file(full_path)
+                    self.load_conversation_text(curr_conversation)
                     self.refresh_treeview()
 
         def rename_conversation(item_id):
@@ -278,10 +282,6 @@ class Main(tk.Frame):
             content = message["content"]
             self.conversation_text.insert(tk.END, f"{role.capitalize()}: {content}\n")
 
-    def new_conversation(self):
-        messagebox.showinfo("New Conversation", "Create a new conversation")
-        # Implement the logic for creating a new conversation in ConversationLogic
-
     def load_conversation_from_file(self):
         """ Opens the data/ directory to view and load a .json conversation.
         
@@ -371,8 +371,28 @@ class Main(tk.Frame):
         api_key_entry.grid(row=3, column=1)
         api_key_var.set(configs.get('OPENAI_API_KEY'))
 
+    def new_conversation(self):
+        """ Function call to handle new unique conversations
+        This method handles unique file name generation, filename setting, and 
+        resets the prompt to its original state. Updates the GUI as needed. 
+        """
+        new_filename = self.conversation_logic.new_unique_filename()
+
+        self.conversation_logic.set_filename(new_filename)
+    
+        self.conversation_logic.reset_conversation()
+
+        self.update_title_labels()
+
+        self.refresh_treeview()
+        
+        # Return the filename in case further action is needed
+        return new_filename
+
     def update_title_labels(self):
-        """Updates the model_label with the correct formatting"""
+        """Updates the model_label with the correct formatting
+        This method displays the necessary instance varibles to the GUI.
+        """
 
         # Selected Model Label 
         self.model_var.set(self.conversation_logic.model)

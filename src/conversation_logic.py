@@ -1,4 +1,4 @@
-import logging, json, tiktoken, os 
+import logging, json, tiktoken, os, time
 from openai import OpenAI, APIConnectionError, AuthenticationError
 from configuration import ConfigManager
 
@@ -92,7 +92,8 @@ class ConversationLogic:
                 f"Total Input: {self.input_tokens} | "
                 f"Total Response: {self.response_tokens}\n"
                 f"Model Used: {self.model_type} | "
-                f"API Stop Reason: {self.stop_reason}"
+                f"API Stop Reason: {self.stop_reason} | "
+                f"Current Json File: {self.filename}"
             )
             logging.info(api_log)
             print(api_log)
@@ -113,7 +114,16 @@ class ConversationLogic:
             logging.error("ValueError: Invalid filepath. Must be within the 'data/' directory.")
             raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
         self.filename = new_filename
-        print(f"Filename updated: {self.filename}")
+        # Add Logging data here to include current filename
+
+    def new_unique_filename(self, prefix="Conv"):
+        # Get a unique timestamp or count
+        timestamp = int(time.time())
+        filename = os.path.join("data", f"{prefix}{timestamp}.json")
+        while os.path.exists(filename):
+            timestamp += 1
+            filename = os.path.join("data", f"{prefix}{timestamp}.json")
+        return filename
 
     def load_conversation(self, filename=None): 
         """Attempts to load the conversation from a given .json file 
@@ -168,9 +178,15 @@ class ConversationLogic:
                 logging.error(f"Value error: {ValueError}") 
                 raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
             else:
-                configs = {'filename': os.path.join('data', 'conversation.json')}
-                self.update_configs(configs)
+                # Check if the file being deleted is the base conversation.json
+                if filename == os.path.join('data', 'conversation.json'):
+                    print("Cannot Delete Conversation File")
+                # Check if the file being deleted is the currently loaded conversation
+                if filename == self.filename:
+                    self.set_filename(self.config.get('filename')) # Reset to the base conversation.json
+                conversation = self.load_conversation() 
                 os.remove(filename)
+                return conversation # return current conversation state 
         except FileNotFoundError:  
             print(f"Conversation file not found.")
 

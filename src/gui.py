@@ -140,10 +140,14 @@ class Main(tk.Frame):
 
         def rename_conversation(item_id):
             # Get the current filename
-            current_name = self.conversation_treeview.item(item_id, 'values')[0]
+            current_name = self.conversation_treeview.item(item_id, 'values')[0] # Gets the full filename from treeview
+            current_name = os.path.splitext(os.path.basename(current_name))[0] # Removes .json ext from the filepath
             new_name = simpledialog.askstring("Rename Conversation", "Enter new conversation filename:", initialvalue=current_name)
             if new_name:
-                # Add code here to rename the JSON file
+                new_name = new_name.replace(" ", "_")
+                new_name += ".json"
+                new_file_path = os.path.join("data", new_name)
+                #self.conversation_logic.set_filename(new_file_path) ADD RENAMING METHOD 
                 self.refresh_treeview()
 
         self.refresh_treeview()
@@ -265,10 +269,11 @@ class Main(tk.Frame):
     def on_reset_button_click(self):
         """Handles the action when the Reset Conversation button is clicked.
 
-        Resets the conversation in the conversation text widget (clears the conversation in the gui """
+        Resets the conversation in the conversation text widget (clears the conversation in the gui) """
 
-        self.conversation_logic.reset_conversation() # reset function call
+        curr_conv = self.conversation_logic.reset_conversation() # reset function call
         self.conversation_text.delete("1.0", tk.END)
+        self.load_conversation_text(curr_conv)
 
     def load_conversation_text(self, conversation):
         """Updates the conversation text in the GUI based on the loaded conversation from a file"""
@@ -377,12 +382,11 @@ class Main(tk.Frame):
         resets the prompt to its original state. Updates the GUI as needed. 
         """
         new_filename = self.conversation_logic.new_unique_filename()
-
-        self.conversation_logic.set_filename(new_filename)
     
-        self.conversation_logic.reset_conversation()
+        curr_conv = self.conversation_logic.reset_conversation()
 
-        self.update_title_labels()
+        self.load_conversation_text(curr_conv)
+        #self.update_title_labels()
 
         self.refresh_treeview()
         

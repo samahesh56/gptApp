@@ -110,9 +110,20 @@ class ConversationLogic:
             return None, (str(conn_error))
         
     def set_filename(self, new_filename):
-        if not new_filename.startswith(os.path.join("data", "")):
+        """ Method used to set/change filenames. Error handling ensures
+        new filenames have the correct filepaths.
+
+        if os.path.isfile(new_filename): # Ensures the filename does not already exist 
+            logging.error(f"Error: File '{new_filename}' already exists.")
+            raise ValueError("Error", f"The file name '{new_filename}' already exists. Please choose a different name.") 
+        """
+        if not new_filename.startswith(os.path.join("data", "")): # Ensures the filename is in the data directory
             logging.error("ValueError: Invalid filepath. Must be within the 'data/' directory.")
             raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
+        if not new_filename.endswith('.json'): # Ensures the filename is of the .json extension
+            logging.error("ValueError: Invalid file type. Must be a '.json' file.")
+            raise ValueError("Invalid file type. Must be a '.json' file.")
+        
         self.filename = new_filename
         # Add Logging data here to include current filename
 
@@ -123,6 +134,7 @@ class ConversationLogic:
         while os.path.exists(filename):
             timestamp += 1
             filename = os.path.join("data", f"{prefix}{timestamp}.json")
+        self.set_filename(filename)
         return filename
 
     def load_conversation(self, filename=None): 
@@ -201,6 +213,8 @@ class ConversationLogic:
         ]
         # Save the updated state to the current file.
         self.save_conversation_to_file(self.filename, messages)
+        curr_conv = self.load_conversation(self.filename)
+        return curr_conv
 
     def count_tokens_in_messages(self, messages, model):
         """Count the number of tokens in a list of messages. This method is provided by tiktoken (import)

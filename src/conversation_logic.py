@@ -127,6 +127,29 @@ class ConversationLogic:
         self.filename = new_filename
         # Add Logging data here to include current filename
 
+    def rename_filename(self, old_filename, new_filename):
+        # Check if the new file is within 'data/' directory
+        if not new_filename.startswith(os.path.join("data", "")):
+            logging.error("ValueError: Invalid filepath. Must be within the 'data/' directory.")
+            raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
+    
+        # Check if the file already exists
+        if os.path.isfile(new_filename):
+            logging.error(f"Error: File '{new_filename}' already exists.")
+            raise ValueError(f"The file name '{new_filename}' already exists. Please choose a different name.")
+    
+        # Check if the file has a .json extension
+        if not new_filename.endswith('.json'):
+            logging.error("ValueError: Invalid file type. Must be a '.json' file.")
+            raise ValueError("Invalid file type. Must be a '.json' file.")
+        
+        # Try renaming the file
+        try:
+            os.rename(old_filename, new_filename)
+        except OSError as e:
+            logging.error(f"Error: {e}")
+            raise ValueError(f"There was an error renaming the file: {e}")
+
     def new_unique_filename(self, prefix="Conv"):
         # Get a unique timestamp or count
         timestamp = int(time.time())

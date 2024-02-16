@@ -141,13 +141,14 @@ class Main(tk.Frame):
         def rename_conversation(item_id):
             # Get the current filename
             current_name = self.conversation_treeview.item(item_id, 'values')[0] # Gets the full filename from treeview
+            old_filename = os.path.join("data", current_name)
             current_name = os.path.splitext(os.path.basename(current_name))[0] # Removes .json ext from the filepath
             new_name = simpledialog.askstring("Rename Conversation", "Enter new conversation filename:", initialvalue=current_name)
             if new_name:
                 new_name = new_name.replace(" ", "_")
                 new_name += ".json"
-                new_file_path = os.path.join("data", new_name)
-                #self.conversation_logic.set_filename(new_file_path) ADD RENAMING METHOD 
+                new_filename = os.path.join("data", new_name)
+                self.conversation_logic.rename_filename(old_filename, new_filename)
                 self.refresh_treeview()
 
         self.refresh_treeview()

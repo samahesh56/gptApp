@@ -139,16 +139,29 @@ class Main(tk.Frame):
                     self.refresh_treeview()
 
         def rename_conversation(item_id):
-            # Get the current filename
-            current_name = self.conversation_treeview.item(item_id, 'values')[0] # Gets the full filename from treeview
-            old_filename = os.path.join("data", current_name)
+            """ Renames a conversation file given the ID from the treeview.  
+            Args:
+                item_id: The ID of the item in the conversation treeview to rename. """
+            
+            current_name = self.conversation_treeview.item(item_id, 'values')[0] # Gets the shortened filename from treeview
+            selected_filename = os.path.join("data", current_name) # concatenates data directory to current name.  
+            
             current_name = os.path.splitext(os.path.basename(current_name))[0] # Removes .json ext from the filepath
             new_name = simpledialog.askstring("Rename Conversation", "Enter new conversation filename:", initialvalue=current_name)
+            
             if new_name:
-                new_name = new_name.replace(" ", "_")
-                new_name += ".json"
+                new_name = new_name.replace(" ", "_") + ".json" # if 
                 new_filename = os.path.join("data", new_name)
-                self.conversation_logic.rename_filename(old_filename, new_filename)
+
+                # Rename the file (unless it is conversation.json)
+                self.conversation_logic.rename_filename(selected_filename, new_filename)
+                
+                # If renaming the currently open file, reload it in the GUI
+                if selected_filename == self.conversation_logic.filename:
+                    curr_conv = self.conversation_logic.load_conversation(new_filename) 
+                    self.load_conversation_text(curr_conv)
+                
+                # Refresh the treeview to reflect changes
                 self.refresh_treeview()
 
         self.refresh_treeview()

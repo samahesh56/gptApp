@@ -117,32 +117,17 @@ class ConversationLogic:
             logging.error(f"Error: File '{new_filename}' already exists.")
             raise ValueError("Error", f"The file name '{new_filename}' already exists. Please choose a different name.") 
         """
-        if not new_filename.startswith(os.path.join("data", "")): # Ensures the filename is in the data directory
-            logging.error("ValueError: Invalid filepath. Must be within the 'data/' directory.")
-            raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
-        if not new_filename.endswith('.json'): # Ensures the filename is of the .json extension
-            logging.error("ValueError: Invalid file type. Must be a '.json' file.")
-            raise ValueError("Invalid file type. Must be a '.json' file.")
+        if not self.is_valid_filename(new_filename):
+            logging.error("ValueError: Invalid filepath. Must be within the 'data/' directory and have a '.json' extension.")
+            raise ValueError("Invalid filename. The file must be in the 'data/' directory and have a '.json' extension.")
         
         self.filename = new_filename
         # Add Logging data here to include current filename
 
     def rename_filename(self, old_filename, new_filename):
-        # Check if the new file is within 'data/' directory
-        if not new_filename.startswith(os.path.join("data", "")):
-            logging.error("ValueError: Invalid filepath. Must be within the 'data/' directory.")
-            raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
+        if not self.is_valid_filename(new_filename):
+            raise ValueError("Invalid filename. The file must be in the 'data/' directory and have a '.json' extension.")
     
-        # Check if the file already exists
-        if os.path.isfile(new_filename):
-            logging.error(f"Error: File '{new_filename}' already exists.")
-            raise ValueError(f"The file name '{new_filename}' already exists. Please choose a different name.")
-    
-        # Check if the file has a .json extension
-        if not new_filename.endswith('.json'):
-            logging.error("ValueError: Invalid file type. Must be a '.json' file.")
-            raise ValueError("Invalid file type. Must be a '.json' file.")
-        
         # Try renaming the file
         try:
             os.rename(old_filename, new_filename)
@@ -159,6 +144,21 @@ class ConversationLogic:
             filename = os.path.join("data", f"{prefix}{timestamp}.json")
         self.set_filename(filename)
         return filename
+    
+    def is_valid_filename(self, filename):
+        # Check if the filename ends with .json
+        if not filename.endswith('.json'):
+            return False
+
+        # Construct the full path and check if it starts with the data/ directory
+        full_path = os.path.abspath(filename)
+        data_dir = os.path.abspath("data") + os.sep  # Ensure it ends with the directory separator
+        
+        # Check if the full_path starts with the data_dir path
+        if not full_path.startswith(data_dir):
+            return False
+
+        return True
 
     def load_conversation(self, filename=None): 
         """Attempts to load the conversation from a given .json file 
@@ -300,7 +300,6 @@ class ConversationLogic:
         self.model = self.config.get('model') 
         self.system_message = self.config.get('system_message') 
         self.max_tokens = self.config.get('max_tokens')
-        self.filename = self.config.get('filename')
 
         # Update any other logic in ConversationLogic as needed
         

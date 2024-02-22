@@ -1,4 +1,4 @@
-import logging, json, tiktoken, os 
+import logging, json, tiktoken, os, time
 from openai import OpenAI, APIConnectionError, AuthenticationError
 from configuration import ConfigManager
 
@@ -92,7 +92,8 @@ class ConversationLogic:
                 f"Total Input: {self.input_tokens} | "
                 f"Total Response: {self.response_tokens}\n"
                 f"Model Used: {self.model_type} | "
-                f"API Stop Reason: {self.stop_reason}"
+                f"API Stop Reason: {self.stop_reason} | "
+                f"Current Json File: {self.filename}"
             )
             logging.info(api_log)
             print(api_log)
@@ -107,6 +108,57 @@ class ConversationLogic:
         except APIConnectionError as conn_error:
             logging.error(f"API connection error: {conn_error}")
             return None, (str(conn_error))
+        
+    def set_filename(self, new_filename):
+        """ Method used to set/change filenames. Error handling ensures
+        new filenames have the correct filepaths.
+
+        if os.path.isfile(new_filename): # Ensures the filename does not already exist 
+            logging.error(f"Error: File '{new_filename}' already exists.")
+            raise ValueError("Error", f"The file name '{new_filename}' already exists. Please choose a different name.") 
+        """
+        if not self.is_valid_filename(new_filename):
+            logging.error("ValueError: Invalid filepath. Must be within the 'data/' directory and have a '.json' extension.")
+            raise ValueError("Invalid filename. The file must be in the 'data/' directory and have a '.json' extension.")
+        
+        self.filename = new_filename
+        # Add Logging data here to include current filename
+
+    def rename_filename(self, old_filename, new_filename):
+        if not self.is_valid_filename(new_filename):
+            raise ValueError("Invalid filename. The file must be in the 'data/' directory and have a '.json' extension.")
+    
+        # Try renaming the file
+        try:
+            os.rename(old_filename, new_filename)
+        except OSError as e:
+            logging.error(f"Error: {e}")
+            raise ValueError(f"There was an error renaming the file: {e}")
+
+    def new_unique_filename(self, prefix="Conv"):
+        # Get a unique timestamp or count
+        timestamp = int(time.time())
+        filename = os.path.join("data", f"{prefix}{timestamp}.json")
+        while os.path.exists(filename):
+            timestamp += 1
+            filename = os.path.join("data", f"{prefix}{timestamp}.json")
+        self.set_filename(filename)
+        return filename
+    
+    def is_valid_filename(self, filename):
+        # Check if the filename ends with .json
+        if not filename.endswith('.json'):
+            return False
+
+        # Construct the full path and check if it starts with the data/ directory
+        full_path = os.path.abspath(filename)
+        data_dir = os.path.abspath("data") + os.sep  # Ensure it ends with the directory separator
+        
+        # Check if the full_path starts with the data_dir path
+        if not full_path.startswith(data_dir):
+            return False
+
+        return True
 
     def load_conversation(self, filename=None): 
         """Attempts to load the conversation from a given .json file 
@@ -120,17 +172,10 @@ class ConversationLogic:
             filename = self.filename # if there is no file found, it is given the configured path. Its default value is data\conversation.json 
 
         try:
-            if not filename.startswith(os.path.join("data", "")):
-                logging.error(f"Value error: {ValueError}") 
-                raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
             with open(filename, 'r') as file: 
                 loaded_conversation = json.load(file) 
-                if filename != self.filename: # if the given file path (conversation) does not match the current file path, a new file path is set to the filepath.
-                    self.filename = filename  # Update the filepath if a different file is loaded
-                    print("Loaded File At: " + self.filename)
-                    configs = {'filename': os.path.join("", self.filename)}
-                    self.update_configs(configs)
-                return loaded_conversation # returns the given conversation of the file 
+                self.set_filename(filename)  # Update the filepath if a different file is loaded (uses setter method)
+                return loaded_conversation
         except FileNotFoundError:  
             print(f"Conversation file not found.")
             # implement logic for fixing errors in finding the default conversation.json file. 
@@ -168,9 +213,15 @@ class ConversationLogic:
                 logging.error(f"Value error: {ValueError}") 
                 raise ValueError("Invalid filepath. Must be within the 'data/' directory.")
             else:
-                configs = {'filename': os.path.join('data', 'conversation.json')}
-                self.update_configs(configs)
+                # Check if the file being deleted is the base conversation.json
+                if filename == os.path.join('data', 'conversation.json'):
+                    print("Cannot Delete Conversation File")
+                # Check if the file being deleted is the currently loaded conversation
+                if filename == self.filename:
+                    self.set_filename(self.config.get('filename')) # Reset to the base conversation.json
+                conversation = self.load_conversation() 
                 os.remove(filename)
+                return conversation # return current conversation state 
         except FileNotFoundError:  
             print(f"Conversation file not found.")
 
@@ -185,6 +236,8 @@ class ConversationLogic:
         ]
         # Save the updated state to the current file.
         self.save_conversation_to_file(self.filename, messages)
+        curr_conv = self.load_conversation(self.filename)
+        return curr_conv
 
     def count_tokens_in_messages(self, messages, model):
         """Count the number of tokens in a list of messages. This method is provided by tiktoken (import)
@@ -247,7 +300,6 @@ class ConversationLogic:
         self.model = self.config.get('model') 
         self.system_message = self.config.get('system_message') 
         self.max_tokens = self.config.get('max_tokens')
-        self.filename = self.config.get('filename')
 
         # Update any other logic in ConversationLogic as needed
         

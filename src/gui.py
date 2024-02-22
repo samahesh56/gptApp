@@ -28,10 +28,10 @@ class Main(tk.Frame):
 
         self.init_gui()
 
-        # Update conversation text if the file exists
+        # load the config's initial conversation file if found 
         loaded_conversation = self.conversation_logic.load_conversation(filename=self.filename)
         if loaded_conversation:
-            self.conversation_text.yview(tk.END, self.load_conversation_text())
+            self.conversation_text.yview(tk.END, self.load_conversation_text(loaded_conversation))
 
     def init_gui(self):
         """Initializes the graphical user interface (GUI) elements
@@ -59,7 +59,7 @@ class Main(tk.Frame):
         # File Menu (Menu Toolbar)
         file_menu = tk.Menu(menu_bar, tearoff=0) 
         file_menu.add_command(label="New Conversation", command=self.new_conversation)
-        file_menu.add_command(label="Import...", command=self.import_conversation)
+        file_menu.add_command(label="Open Conversation", command=self.load_conversation_from_file)
         file_menu.add_command(label="Save As...", command=self.save_conversation)
         file_menu.add_separator()
         file_menu.add_command(label="Settings", command=self.open_settings_menu)
@@ -67,7 +67,7 @@ class Main(tk.Frame):
         
         # Menu Toolbar Commands
         menu_bar.add_cascade(label="File", menu=file_menu)
-        menu_bar.add_command(label="Import", command=self.import_conversation)
+        menu_bar.add_command(label="Load", command=self.load_conversation_from_file)
         menu_bar.add_command(label="ChatGPT Settings", command=self.open_settings_menu)
 
     def create_left_frame(self): 
@@ -105,6 +105,10 @@ class Main(tk.Frame):
         self.filename_label = tk.Label(title_frame, font=("Helvetica", 12))
         self.filename_label.grid(row=3, column=0, padx=10, pady=10, in_=title_frame)
 
+        # New Conversation Button
+        self.new_chat_button = tk.Button(title_frame, text="New Chat", command=self.new_conversation)
+        self.new_chat_button.grid(row=4, column=0, padx=10, pady=10, in_=title_frame)
+
         # History Label
         conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bd=1, relief="flat")
         conv_history_label.grid(row=0, column=0, padx=10, pady=10)
@@ -130,16 +134,34 @@ class Main(tk.Frame):
                 selected_filename = self.conversation_treeview.item(item_id, 'values')[0]
                 full_path = os.path.join("data", selected_filename) 
                 if messagebox.askyesno("Remove Conversation", f"Are you sure you want to remove '{selected_filename}'?"):
-                    self.conversation_logic.remove_conversation_from_file(full_path)
-                    self.load_conversation_text()
+                    curr_conversation = self.conversation_logic.remove_conversation_from_file(full_path)
+                    self.load_conversation_text(curr_conversation)
                     self.refresh_treeview()
 
         def rename_conversation(item_id):
-            # Get the current filename
-            current_name = self.conversation_treeview.item(item_id, 'values')[0]
+            """ Renames a conversation file given the ID from the treeview.  
+            Args:
+                item_id: The ID of the item in the conversation treeview to rename. """
+            
+            current_name = self.conversation_treeview.item(item_id, 'values')[0] # Gets the shortened filename from treeview
+            selected_filename = os.path.join("data", current_name) # concatenates data directory to current name.  
+            
+            current_name = os.path.splitext(os.path.basename(current_name))[0] # Removes .json ext from the filepath
             new_name = simpledialog.askstring("Rename Conversation", "Enter new conversation filename:", initialvalue=current_name)
+            
             if new_name:
-                # Add code here to rename the JSON file
+                new_name = new_name.replace(" ", "_") + ".json" # if 
+                new_filename = os.path.join("data", new_name)
+
+                # Rename the file (unless it is conversation.json)
+                self.conversation_logic.rename_filename(selected_filename, new_filename)
+                
+                # If renaming the currently open file, reload it in the GUI
+                if selected_filename == self.conversation_logic.filename:
+                    curr_conv = self.conversation_logic.load_conversation(new_filename) 
+                    self.load_conversation_text(curr_conv)
+                
+                # Refresh the treeview to reflect changes
                 self.refresh_treeview()
 
         self.refresh_treeview()
@@ -163,8 +185,8 @@ class Main(tk.Frame):
             item_id = self.conversation_treeview.focus() # holds ID of selected item 
             selected_filename = self.conversation_treeview.item(item_id, "values")[0] # retrieve filename of given id's associated value (file) 
             full_path = os.path.join("data", selected_filename) 
-            self.conversation_logic.load_conversation(full_path)
-            self.load_conversation_text()
+            curr_conversation = self.conversation_logic.load_conversation(full_path)
+            self.load_conversation_text(curr_conversation)
         
         self.conversation_treeview.bind("<Double-1>", on_double_click) # Bind double click event (double-1 is event)
 
@@ -261,15 +283,15 @@ class Main(tk.Frame):
     def on_reset_button_click(self):
         """Handles the action when the Reset Conversation button is clicked.
 
-        Resets the conversation in the conversation text widget (clears the conversation in the gui """
+        Resets the conversation in the conversation text widget (clears the conversation in the gui) """
 
-        self.conversation_logic.reset_conversation() # reset function call
+        curr_conv = self.conversation_logic.reset_conversation() # reset function call
         self.conversation_text.delete("1.0", tk.END)
+        self.load_conversation_text(curr_conv)
 
-    def load_conversation_text(self):
+    def load_conversation_text(self, conversation):
         """Updates the conversation text in the GUI based on the loaded conversation from a file"""
 
-        conversation = self.conversation_logic.load_conversation(self.conversation_logic.filename)  # loads the current file (and filename) being used
         messages = conversation.get('messages', [])
         self.conversation_text.delete(1.0, tk.END)
         self.update_title_labels()
@@ -279,47 +301,36 @@ class Main(tk.Frame):
             content = message["content"]
             self.conversation_text.insert(tk.END, f"{role.capitalize()}: {content}\n")
 
-    def new_conversation(self):
-        messagebox.showinfo("New Conversation", "Create a new conversation")
-        # Implement the logic for creating a new conversation in ConversationLogic
-
-    def import_conversation(self):
-        """ Opens the data/directory to view and load a .json conversation.
+    def load_conversation_from_file(self):
+        """ Opens the data/ directory to view and load a .json conversation.
         
-        filedialog loads a window to choose from existing .json files in data/ directory, thus returning a filename when chosen
+        filedialog loads a window to choose from existing .json files, thus returning a filename when chosen
         If the loaded filename is different from the default filename (which is set to data/conversation.jon), the filename is changed in real time """
 
         filename = filedialog.askopenfilename(  
-            initialdir=self.conversation_logic.directory, # where to open to 
-            title="Import Conversation",
+            initialdir="data/conversation", # where to open to 
+            title="Open Conversation",
             filetypes=(("JSON files", "*.json"), ("All files", "*.*")) 
-        ) 
-
-        base_filepath = os.path.basename(filename)
-        fullpath = os.path.join(self.conversation_logic.directory, base_filepath)
-
+        )
         if filename: 
-            self.conversation_logic.load_conversation(fullpath) # load the given file's conversation
-            self.filename_var.set(fullpath)
+            curr_conversation = self.conversation_logic.load_conversation(filename) # load the given file's conversation
+            self.filename_var.set(filename)
             self.update_title_labels()
-            self.load_conversation_text() # display the conversation in the gui.
+            self.load_conversation_text(curr_conversation) # display the conversation in the gui.
 
     def save_conversation(self):
         """Opens a window to "Save As" the current conversation to a JSON file."""
 
         filename = filedialog.asksaveasfilename(
-            initialdir=self.conversation_logic.directory,
+            initialdir="data/",
             title="Save Conversation",
             filetypes=(("JSON files", "*.json"), ("All files", "*.*"))
         )
-        
         if filename:
             if not filename.endswith(".json"):
-                print("Error in saving conversations. Fix save directory to accurately open to saved conversation location")
                 filename += ".json"
 
-            # Methods used to save the conversation. Load the current conversation, and save it to file. 
-            current_messages = self.conversation_logic.load_conversation().get('messages', []) 
+            current_messages = self.conversation_logic.load_conversation().get('messages', []) # Methods used to save the conversation. Load the current conversation, and save it to file. 
             self.conversation_logic.save_conversation_to_file(filename, current_messages)
             self.refresh_treeview()
             messagebox.showinfo("Save", "The conversation has been saved.")
@@ -355,7 +366,7 @@ class Main(tk.Frame):
         # Model selection
         tk.Label(settings_window, text='Model:').grid(row=0, column=0)
         model_select = ttk.Combobox(settings_window, textvariable=self.model_var) # Dropdown menu for changing models. Text is held in model_var
-        model_select['values'] = ('gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4')  # Set available models here 
+        model_select['values'] = ('gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4')  # Set available models here 
         model_select.grid(row=0, column=1) # assigns it to column 1. 
         self.model_var.set(configs.get('model'))
 
@@ -379,8 +390,27 @@ class Main(tk.Frame):
         api_key_entry.grid(row=3, column=1)
         api_key_var.set(configs.get('OPENAI_API_KEY'))
 
+    def new_conversation(self):
+        """ Function call to handle new unique conversations
+        This method handles unique file name generation, filename setting, and 
+        resets the prompt to its original state. Updates the GUI as needed. 
+        """
+        new_filename = self.conversation_logic.new_unique_filename()
+    
+        curr_conv = self.conversation_logic.reset_conversation()
+
+        self.load_conversation_text(curr_conv)
+        #self.update_title_labels()
+
+        self.refresh_treeview()
+        
+        # Return the filename in case further action is needed
+        return new_filename
+
     def update_title_labels(self):
-        """Updates the model_label with the correct formatting"""
+        """Updates the model_label with the correct formatting
+        This method displays the necessary instance varibles to the GUI.
+        """
 
         # Selected Model Label 
         self.model_var.set(self.conversation_logic.model)

@@ -73,52 +73,66 @@ class Main(tk.Frame):
     def create_left_frame(self): 
         """ Creates the Left Frame, which holds the Title Frame and Conv History Frame.
         
-        The Title frame holds dynamic labels, grid specs, and content/info specs.
-        
-        IMPORTANT: It may make more sense to create the left frame from within init_gui(),
-        and subsequently pass in the left_frame into this method. This can improve overall modularity. """
+        The Title frame holds dynamic labels, grid, and content/info specifications. """
+        background_color = '#2c2f33' # for dark: #2c2f33 | light: #f3f4f6
+        frame_color = '#23272a' # for dark: #23272a | light: #e1e4e8
+        active_color = '#2c2f33' # for dark: #2c2f33 | light: #d1d6da
+
         # Left Frame
-        left_frame = tk.Frame(self, bd=1, relief="flat",) # add styling as needeed
-        left_frame.grid(column=0, row=1, rowspan=2, sticky=tk.W + tk.E + tk.N + tk.S)
-        left_frame.rowconfigure(0, weight=1)
+        left_frame = tk.Frame(self, bd=1, relief="flat", bg=frame_color) # add styling as needeed
+        left_frame.grid(row=1, column=0, rowspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
+        left_frame.columnconfigure(0, weight=1)
+        left_frame.rowconfigure(1, weight=1)
         
         # Title Frame
-        title_frame = tk.Frame(left_frame, bd=1, relief="flat", bg='red')
-        title_frame.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W + tk.E + tk.N)
+        title_frame = tk.Frame(left_frame, bd=1, relief="raised", bg=active_color)
+        title_frame.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        title_frame.columnconfigure(0, weight=1)
+        title_frame.rowconfigure(1, weight=1)
 
-        title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16), bg='red')
+        title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16), bg=active_color, fg='#5865F2') #555 for light
         title_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
-        # History Frame
-        history_frame = tk.Frame(left_frame, bd=1, relief="flat", height=250, bg='blue')  # Set your desired height
-        history_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
-
-        # Model Label
-        self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg='red')
-        self.model_label.grid(row=1, column=0, padx=10, pady=10, in_=title_frame)
+        # Model Label  
+        self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg=active_color, fg='#ffffff')
+        self.model_label.grid(row=1, column=0, padx=10, pady=10, in_=title_frame, sticky=(tk.W))
+        self.model_options = ['gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4']
+        self.selected_model = tk.StringVar()
+        self.selected_model.set(self.conversation_logic.model)
+        
+        # Create radio buttons for each model option, and display them in new rows. 
+        for i, model in enumerate(self.model_options):
+            rb = tk.Radiobutton(title_frame, text=model, variable=self.selected_model, value=model, command=self.update_title_labels, fg="#ffffff", bg=active_color, selectcolor='#333')
+            rb.grid(row=i+2, column=0, padx=10, pady=2, sticky=tk.W)
 
         # Max Tokens Label
-        self.max_tokens_label = tk.Label(title_frame, font=("Helvetica", 12))
-        self.max_tokens_label.grid(row=2, column=0, padx=10, pady=10, in_=title_frame)
+        self.max_tokens_label = tk.Label(title_frame, text="Max Tokens: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff') #333 for light
+        self.max_tokens_label.grid(row=len(self.model_options)+2, column=0, padx=10, pady=5, sticky=tk.W)
 
         # Filename Label
-        self.filename_label = tk.Label(title_frame, font=("Helvetica", 12))
-        self.filename_label.grid(row=3, column=0, padx=10, pady=10, in_=title_frame)
+        self.filename_label = tk.Label(title_frame, text="Selected File: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff') #333 for light
+        self.filename_label.grid(row=len(self.model_options)+3, column=0, padx=10, pady=5, sticky=tk.W)
 
         # New Conversation Button
         self.new_chat_button = tk.Button(title_frame, text="New Chat", command=self.new_conversation)
-        self.new_chat_button.grid(row=4, column=0, padx=10, pady=10, in_=title_frame)
+        self.new_chat_button.grid(row=len(self.model_options)+4, column=0, padx=10, pady=10)
+
+         # Conversation History Frame
+        history_frame = tk.Frame(left_frame, bd=1, relief="raised", height=250, bg=active_color) 
+        history_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        history_frame.columnconfigure(0, weight=1)
+        history_frame.rowconfigure(1, weight=1)
 
         # History Label
-        conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bd=1, relief="flat")
-        conv_history_label.grid(row=0, column=0, padx=10, pady=10)
+        conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bg=active_color, fg='#ffffff') #333 for light
+        conv_history_label.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W))
 
         # Creates a Treeview within the history frame
         self.conversation_treeview = ttk.Treeview(history_frame)
-        self.conversation_treeview.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
+        self.conversation_treeview.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S, tk.W))
         self.conversation_treeview["columns"] = ("filename") # define columns + column configs below 
         self.conversation_treeview.column("#0", width=0, minwidth=0, stretch=False) 
-        self.conversation_treeview.column("filename", width=150, minwidth=150, stretch=True)
+        self.conversation_treeview.column("filename", width=200, minwidth=150, stretch=True)
         self.conversation_treeview.heading("filename", text="Filename:", anchor=tk.W)
         self.configure_conversation_treeview() # calls config method for conversation state management in the gui 
 
@@ -149,9 +163,9 @@ class Main(tk.Frame):
             current_name = os.path.splitext(os.path.basename(current_name))[0] # Removes .json ext from the filepath
             new_name = simpledialog.askstring("Rename Conversation", "Enter new conversation filename:", initialvalue=current_name)
             
-            if new_name:
-                new_name = new_name.replace(" ", "_") + ".json" # if 
-                new_filename = os.path.join("data", new_name)
+            if new_name: # error handling to ensure user inputs are valid 
+                new_name = new_name.replace(" ", "_") + ".json" 
+                new_filename = os.path.join("data", new_name) 
 
                 # Rename the file (unless it is conversation.json)
                 self.conversation_logic.rename_filename(selected_filename, new_filename)
@@ -209,7 +223,8 @@ class Main(tk.Frame):
     def create_right_frame(self):
         # Right Frame
         right_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
-        right_frame.grid(column=2, row=1)
+        right_frame.grid(row=1, column=2)
+        right_frame.columnconfigure(2, weight=1)
         right_frame.rowconfigure(0, weight=1)
         
         label_text = "Hello, Right Frame!"
@@ -408,13 +423,14 @@ class Main(tk.Frame):
         return new_filename
 
     def update_title_labels(self):
-        """Updates the model_label with the correct formatting
-        This method displays the necessary instance varibles to the GUI.
+        """Updates (and sets) the title frame labels with the correct formatting
+        This method displays the necessary instance variables to the GUI.
         """
 
         # Selected Model Label 
+        self.conversation_logic.model = self.selected_model.get() # Updates the model based on the radio button currently selected 
         self.model_var.set(self.conversation_logic.model)
-        current_model_text = "Selected Model: " + self.model_var.get()
+        current_model_text = "Model: " + self.model_var.get()
         self.model_label.config(text=current_model_text)
         
         # Token Limit Label 
@@ -424,7 +440,7 @@ class Main(tk.Frame):
 
         # Selected File: 
         self.filename_var.set(self.conversation_logic.filename)
-        current_file_text = "Selected File: " + os.path.basename(self.filename_var.get())
+        current_file_text = "Current File: " + os.path.basename(self.filename_var.get())
         self.filename_label.config(text=current_file_text)
 
     def refresh_treeview(self):

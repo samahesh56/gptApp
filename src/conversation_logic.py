@@ -79,7 +79,7 @@ class ConversationLogic:
                 max_tokens=self.max_tokens, # a "limiter" that helps truncate conversations
             )
 
-            # These are return statements from the API (look at documentation for more info). These are helpful for future logging and debugging. 
+            # These are return statements from the API (look at documentation for more info). These are helpful for logging and debugging. 
             self.total_tokens_used = response.usage.total_tokens
             self.input_tokens = response.usage.prompt_tokens
             self.response_tokens = response.usage.completion_tokens
@@ -88,7 +88,8 @@ class ConversationLogic:
             
             # Log API and ChatGPT Information 
             api_log = (
-                f"Total tokens used for API call: {self.total_tokens_used} | "
+                f"Total tokens used: {self.total_tokens_used} | "
+                f"Total tokens allowed: {self.max_tokens} | " 
                 f"Total Input: {self.input_tokens} | "
                 f"Total Response: {self.response_tokens}\n"
                 f"Model Used: {self.model_type} | "
@@ -176,9 +177,12 @@ class ConversationLogic:
                 loaded_conversation = json.load(file) 
                 self.set_filename(filename)  # Update the filepath if a different file is loaded (uses setter method)
                 return loaded_conversation
-        except FileNotFoundError:  
-            print(f"Conversation file not found.")
-            # implement logic for fixing errors in finding the default conversation.json file. 
+        except FileNotFoundError as e:  
+            logging.error(f"File not found error: {e}")
+            raise FileNotFoundError(f"Conversation file not found: {filename}") from e
+        except Exception as e: # Any other errors will be recorded here. 
+            logging.error(f"Error while loading conversation: {e}")
+            raise RuntimeError(f"Error loading conversation from file: {filename}") from e 
 
     def update_conversation(self, user_input, gpt_response):
         """Update the conversation state with the latest user input and GPT response.

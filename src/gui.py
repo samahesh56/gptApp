@@ -87,7 +87,7 @@ class Main(tk.Frame):
         # Title Frame
         title_frame = tk.Frame(left_frame, bd=1, relief="raised", bg=active_color)
         title_frame.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
-        title_frame.columnconfigure(0, weight=1)
+        title_frame.columnconfigure(0, weight=1) # Stretch elements within the first column of title frame
         title_frame.rowconfigure(1, weight=1)
 
         title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16), bg=active_color, fg='#5865F2') #555 for light
@@ -97,17 +97,26 @@ class Main(tk.Frame):
         self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg=active_color, fg='#ffffff')
         self.model_label.grid(row=1, column=0, padx=10, pady=10, in_=title_frame, sticky=(tk.W))
         self.model_options = ['gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4']
-        self.selected_model = tk.StringVar()
-        self.selected_model.set(self.conversation_logic.model)
+        self.model_var.set(self.conversation_logic.model) # set the model var by retrieving the conversation logic
         
         # Create radio buttons for each model option, and display them in new rows. 
         for i, model in enumerate(self.model_options):
-            rb = tk.Radiobutton(title_frame, text=model, variable=self.selected_model, value=model, command=self.update_title_labels, fg="#ffffff", bg=active_color, selectcolor='#333')
+            rb = tk.Radiobutton(title_frame, text=model, variable=self.model_var, value=model, command=self.update_title_labels, fg="#ffffff", bg=active_color, selectcolor=background_color)
             rb.grid(row=i+2, column=0, padx=10, pady=2, sticky=tk.W)
 
+        # Max Tokens Frame (A seperate frame to hold widgets together)
+        max_tokens_frame = tk.Frame(title_frame, bg=active_color)
+        max_tokens_frame.grid(row=len(self.model_options)+2, column=0, padx=10, pady=5, sticky=(tk.W, tk.E))
+        max_tokens_frame.columnconfigure(0, weight=0) # Don't stretch first column
+        max_tokens_frame.columnconfigure(1, weight=1) # stretch second column as needed
+
         # Max Tokens Label
-        self.max_tokens_label = tk.Label(title_frame, text="Max Tokens: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff') #333 for light
-        self.max_tokens_label.grid(row=len(self.model_options)+2, column=0, padx=10, pady=5, sticky=tk.W)
+        self.max_tokens_label = tk.Label(max_tokens_frame, text="Max Tokens: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff')
+        self.max_tokens_label.grid(row=0, column=0, sticky=tk.W)
+
+        # Max Tokens Spinbox
+        self.max_tokens_spinbox = tk.Spinbox(max_tokens_frame, from_=0, to=5000, textvariable=self.max_tokens_var, width=6, increment=250, command=self.update_title_labels)
+        self.max_tokens_spinbox.grid(row=0, column=1, sticky=tk.W)
 
         # Filename Label
         self.filename_label = tk.Label(title_frame, text="Selected File: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff') #333 for light
@@ -124,7 +133,7 @@ class Main(tk.Frame):
         history_frame.rowconfigure(1, weight=1)
 
         # History Label
-        conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bg=active_color, fg='#ffffff') #333 for light
+        conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bg=active_color, fg='#5865F2') #333 for light
         conv_history_label.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W))
 
         # Creates a Treeview within the history frame
@@ -427,20 +436,30 @@ class Main(tk.Frame):
         This method displays the necessary instance variables to the GUI.
         """
 
-        # Selected Model Label 
-        self.conversation_logic.model = self.selected_model.get() # Updates the model based on the radio button currently selected 
-        self.model_var.set(self.conversation_logic.model)
+        configs = self.conversation_logic.config
+        new_model = self.model_var.get()
+        new_max_tokens = self.max_tokens_var.get()
+
+        def update_config():
+            configs['model'] = new_model
+            configs['max_tokens'] = new_max_tokens
+            self.conversation_logic.update_configs(configs)
+
+        if configs['model'] != new_model or configs['max_tokens'] != new_max_tokens:
+            update_config()
+        
         current_model_text = "Model: " + self.model_var.get()
         self.model_label.config(text=current_model_text)
-        
+
         # Token Limit Label 
-        self.max_tokens_var.set(self.conversation_logic.max_tokens)
-        current_max_tokens_text = "Token Limit: " + str(self.max_tokens_var.get())
-        self.max_tokens_label.config(text=current_max_tokens_text)
+        #self.conversation_logic.max_tokens = self.max_tokens_var.get() # updates max token instance based on current value in spinbox
+        #self.max_tokens_var.set(self.conversation_logic.max_tokens)
+        #current_max_tokens_text = "Token Limit: " + str(self.max_tokens_var.get())
+        #self.max_tokens_label.config(text=current_max_tokens_text)
 
         # Selected File: 
         self.filename_var.set(self.conversation_logic.filename)
-        current_file_text = "Current File: " + os.path.basename(self.filename_var.get())
+        current_file_text = "File: " + os.path.basename(self.filename_var.get())
         self.filename_label.config(text=current_file_text)
 
     def refresh_treeview(self):

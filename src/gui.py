@@ -93,20 +93,24 @@ class Main(tk.Frame):
         title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16), bg=active_color, fg='#5865F2') #555 for light
         title_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
+        # Filename Label
+        self.filename_label = tk.Label(title_frame, text="Selected File: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff') #333 for light
+        self.filename_label.grid(row=1, column=0, padx=10, pady=0, sticky=tk.W)
+
         # Model Label  
         self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg=active_color, fg='#ffffff')
-        self.model_label.grid(row=1, column=0, padx=10, pady=10, in_=title_frame, sticky=(tk.W))
+        self.model_label.grid(row=2, column=0, padx=10, pady=10, in_=title_frame, sticky=(tk.W))
         self.model_options = ['gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4']
         self.model_var.set(self.conversation_logic.model) # set the model var by retrieving the conversation logic
         
         # Create radio buttons for each model option, and display them in new rows. 
         for i, model in enumerate(self.model_options):
             rb = tk.Radiobutton(title_frame, text=model, variable=self.model_var, value=model, command=self.update_title_labels, fg="#ffffff", bg=active_color, selectcolor=background_color)
-            rb.grid(row=i+2, column=0, padx=10, pady=2, sticky=tk.W)
+            rb.grid(row=i+3, column=0, padx=10, pady=2, sticky=tk.W)
 
         # Max Tokens Frame (A seperate frame to hold widgets together)
         max_tokens_frame = tk.Frame(title_frame, bg=active_color)
-        max_tokens_frame.grid(row=len(self.model_options)+2, column=0, padx=10, pady=5, sticky=(tk.W, tk.E))
+        max_tokens_frame.grid(row=len(self.model_options)+3, column=0, padx=10, pady=5, sticky=(tk.W, tk.E))
         max_tokens_frame.columnconfigure(0, weight=0) # Don't stretch first column
         max_tokens_frame.columnconfigure(1, weight=1) # stretch second column as needed
 
@@ -115,16 +119,17 @@ class Main(tk.Frame):
         self.max_tokens_label.grid(row=0, column=0, sticky=tk.W)
 
         # Max Tokens Spinbox
-        self.max_tokens_spinbox = tk.Spinbox(max_tokens_frame, from_=0, to=5000, textvariable=self.max_tokens_var, width=6, increment=250, command=self.update_title_labels)
+        self.max_tokens_spinbox = tk.Spinbox(max_tokens_frame, from_=0, to=5000, textvariable=self.max_tokens_var, width=7, increment=250, 
+                                             font=("Helvetica", 12), command=self.update_title_labels, bg=active_color, fg='#ffffff')
         self.max_tokens_spinbox.grid(row=0, column=1, sticky=tk.W)
 
-        # Filename Label
-        self.filename_label = tk.Label(title_frame, text="Selected File: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff') #333 for light
-        self.filename_label.grid(row=len(self.model_options)+3, column=0, padx=10, pady=5, sticky=tk.W)
+        # Clear Conversation Button 
+        self.clear_chat_button = tk.Button(max_tokens_frame, width=10, text="Clear Chat", command=self.on_reset_button_click)
+        self.clear_chat_button.grid(row=1, column=0, padx=5, pady=10, sticky=tk.W)
 
         # New Conversation Button
-        self.new_chat_button = tk.Button(title_frame, text="New Chat", command=self.new_conversation)
-        self.new_chat_button.grid(row=len(self.model_options)+4, column=0, padx=10, pady=10)
+        self.new_chat_button = tk.Button(max_tokens_frame, width=10, text="New Chat", command=self.new_conversation)
+        self.new_chat_button.grid(row=1, column=1, padx=5, pady=10, sticky=tk.W)
 
          # Conversation History Frame
         history_frame = tk.Frame(left_frame, bd=1, relief="raised", height=250, bg=active_color) 
@@ -140,7 +145,7 @@ class Main(tk.Frame):
         self.conversation_treeview = ttk.Treeview(history_frame)
         self.conversation_treeview.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S, tk.W))
         self.conversation_treeview["columns"] = ("filename") # define columns + column configs below 
-        self.conversation_treeview.column("#0", width=0, minwidth=0, stretch=False) 
+        self.conversation_treeview.column("#0", width=0, minwidth=0, stretch=False) # Defines the structure of the treeview as a parent-child relationship. Stretch=false hides this branch structure
         self.conversation_treeview.column("filename", width=200, minwidth=150, stretch=True)
         self.conversation_treeview.heading("filename", text="Filename:", anchor=tk.W)
         self.configure_conversation_treeview() # calls config method for conversation state management in the gui 

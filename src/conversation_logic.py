@@ -64,7 +64,7 @@ class ConversationLogic:
         """
 
         messages = self.load_conversation().get('messages', []) 
-        new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}], model=self.model) # calculates the ~amount of input tokens prior to the API call
+        new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}]) # calculates the ~amount of input tokens prior to the API call
         remaining_tokens = self.max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the conversation is truncated more harshly to fit within the token limit. This helps reduce costs slightly, at the cost of reducing prior context for the GPT. 
         print(f"\n~ input tokens: {new_input_tokens} ~ remaining tokens: {remaining_tokens}")
 
@@ -243,14 +243,16 @@ class ConversationLogic:
         curr_conv = self.load_conversation(self.filename)
         return curr_conv
 
-    def count_tokens_in_messages(self, messages, model):
+    def count_tokens_in_messages(self, messages):
         """Count the number of tokens in a list of messages. This method is provided by tiktoken (import)
         Args:
-            messages (list): List of messages in the conversation.
+            messages (dictionary): dictionary containing each conversation message in a list [].
             model (str): The GPT model being used.
 
         Returns:
             int: The total number of tokens in the given messages. """
+        
+        model = self.model # change this value to test specific model costs 
         
         try:
             encoding = tiktoken.encoding_for_model(model)
@@ -284,7 +286,7 @@ class ConversationLogic:
         truncated_messages = [] # new list to hold conversation 
  
         for message in reversed(messages): # REVERSES order of reading messages, looking at the newest information in the conversation first. (appends newest -> oldest in the conversation)
-            message_tokens = self.count_tokens_in_messages([message], model=self.model) # calculates the current ~amount of tokens in the current message, using the model type (different amount of token costs)
+            message_tokens = self.count_tokens_in_messages([message]) # calculates the current ~amount of tokens in the current message, using the model type (different amount of token costs)
             if tokens_used + message_tokens <= remaining_tokens: # if the tokens used (tokens in the conversation that accumulate during the loop) + the amount of the current message is less than the max_tokens allowed by the api call, that message is added to this conversation
                 truncated_messages.insert(0, message) #inserts the newest message to the new conversation list 
                 tokens_used += message_tokens # increases the tokens used (in the conversation) per message added to the list (Reversed)

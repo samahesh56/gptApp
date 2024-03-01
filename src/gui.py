@@ -314,9 +314,10 @@ class Main(tk.Frame):
 
         Resets the conversation in the conversation text widget (clears the conversation in the gui) """
 
-        curr_conv = self.conversation_logic.reset_conversation() # reset function call
-        self.conversation_text.delete("1.0", tk.END)
-        self.load_conversation_text(curr_conv)
+        if messagebox.askyesno("Clear Chat", f"Are you sure you want to clear '{self.conversation_logic.filename}'?\n You cannot undo this action."):
+            curr_conv = self.conversation_logic.reset_conversation() # reset function call
+            #self.conversation_text.delete("1.0", tk.END)
+            self.load_conversation_text(curr_conv)
 
     def load_conversation_text(self, conversation):
         """Updates the conversation text in the GUI based on the loaded conversation from a file"""

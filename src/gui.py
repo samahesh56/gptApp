@@ -237,13 +237,46 @@ class Main(tk.Frame):
     def create_right_frame(self):
         # Right Frame
         right_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
-        right_frame.grid(row=1, column=2)
-        right_frame.columnconfigure(2, weight=1)
-        right_frame.rowconfigure(0, weight=1)
-        
-        label_text = "Hello, Right Frame!"
-        label = tk.Label(right_frame, text=label_text, font=("Helvetica", 14))
-        label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.E)
+        right_frame.grid(row=1, column=2, rowspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
+        right_frame.columnconfigure(0, weight=1)
+        right_frame.rowconfigure(1, weight=1)
+
+        # Prompt Frame 
+        self.prompt_frame = tk.Frame(right_frame, bd=1, relief="raised")
+        self.prompt_frame.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.prompt_frame.columnconfigure([0, 1], weight=1)  # Stretch columns as needed
+
+        self.prompt_1 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 1")
+        self.prompt_1.grid(row=0, column=0, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_2 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 2")
+        self.prompt_2.grid(row=0, column=1, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_3 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 3")
+        self.prompt_3.grid(row=1, column=0, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_4 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 4")
+        self.prompt_4.grid(row=1, column=1, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_5 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 5")
+        self.prompt_5.grid(row=2, column=0, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_6 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 6")
+        self.prompt_6.grid(row=2, column=1, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_text = tk.Text(self.prompt_frame, wrap="word", width=38, height=8,  font=("Helvetica", 12))
+        self.prompt_text.grid(row=3, columnspan=2, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        #self.MAX_BUTTON_WIDTH = 15  # Maximum button width, adjust as necessary
+
+        # Token Calculator Frame
+        self.token_calc_frame = tk.Frame(right_frame, bd=1, relief="raised")
+        self.token_calc_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.token_calc_frame.columnconfigure(0, weight=1)
+        self.token_calc_frame.rowconfigure(1, weight=1)
+
+        self.token_calc_label = tk.Label(self.token_calc_frame, text="Token Cost Calculator", font=("Helvetica", 16))
+        self.token_calc_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
     def create_toolbar_frame(self):
         """Create the Toolbar Section"""

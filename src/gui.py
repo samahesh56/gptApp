@@ -34,14 +34,14 @@ class Main(tk.Frame):
             self.conversation_text.yview(tk.END, self.load_conversation_text(loaded_conversation))
 
     def init_gui(self):
-        """Initializes the graphical user interface (GUI) elements
+        """Initializes the graphical user interface (GUI) elements. Has 3 columns, 1 row structure. Split into more rows as needed.
         
         This includes setting up the grid elements for the menu bar, and other essential frames. """
         self.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.columnconfigure(2, weight=1)
-        self.rowconfigure(1, weight=1)
+        self.columnconfigure(0, weight=0) # left-most frame does NOT stretch 
+        self.columnconfigure(1, weight=1) # middle frame does stretch
+        self.columnconfigure(2, weight=0) # right frame does NOT stretch
+        self.rowconfigure(1, weight=1) # entire row (entire app) stretches 
 
         # GUI layout
         self.create_menu_bar()
@@ -80,7 +80,7 @@ class Main(tk.Frame):
 
         # Left Frame
         left_frame = tk.Frame(self, bd=1, relief="flat", bg=frame_color) # add styling as needeed
-        left_frame.grid(row=1, column=0, rowspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
+        left_frame.grid(row=1, column=0, rowspan=2, sticky=(tk.W, tk.N, tk.S))
         left_frame.columnconfigure(0, weight=1)
         left_frame.rowconfigure(1, weight=1)
         
@@ -226,7 +226,7 @@ class Main(tk.Frame):
         middle_frame.rowconfigure(0, weight=1)
 
         # Display the conversation text section
-        self.conversation_text = tk.Text(middle_frame, wrap="word", width=100, height=30,  font=("Helvetica", 12))
+        self.conversation_text = tk.Text(middle_frame, wrap="word", height=30,  font=("Helvetica", 12))
         self.conversation_text.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Scroll Bar:     
@@ -237,7 +237,7 @@ class Main(tk.Frame):
     def create_right_frame(self):
         # Right Frame
         right_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
-        right_frame.grid(row=1, column=2, rowspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
+        right_frame.grid(row=1, column=2, rowspan=2, sticky=(tk.E, tk.N, tk.S))
         right_frame.columnconfigure(0, weight=1)
         right_frame.rowconfigure(1, weight=1)
 

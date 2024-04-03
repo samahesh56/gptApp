@@ -1,6 +1,7 @@
-import json, os, tkinter as tk
+import threading, json, os, tkinter as tk
 from tkinter import filedialog, messagebox, ttk, simpledialog as simpledialog, messagebox as messagebox
 from datetime import datetime
+from threading import Thread
 from conversation_logic import ConversationLogic
 from configuration import ConfigManager
 
@@ -34,14 +35,14 @@ class Main(tk.Frame):
             self.conversation_text.yview(tk.END, self.load_conversation_text(loaded_conversation))
 
     def init_gui(self):
-        """Initializes the graphical user interface (GUI) elements
+        """Initializes the graphical user interface (GUI) elements. Has 3 columns, 1 row structure. Split into more rows as needed.
         
         This includes setting up the grid elements for the menu bar, and other essential frames. """
         self.grid(column=0, row=0, sticky=(tk.N, tk.W, tk.E, tk.S))
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.columnconfigure(2, weight=1)
-        self.rowconfigure(1, weight=1)
+        self.columnconfigure(0, weight=0) # left-most frame does NOT stretch 
+        self.columnconfigure(1, weight=1) # middle frame does stretch
+        self.columnconfigure(2, weight=0) # right frame does NOT stretch
+        self.rowconfigure(1, weight=1) # entire row (entire app) stretches 
 
         # GUI layout
         self.create_menu_bar()
@@ -73,52 +74,80 @@ class Main(tk.Frame):
     def create_left_frame(self): 
         """ Creates the Left Frame, which holds the Title Frame and Conv History Frame.
         
-        The Title frame holds dynamic labels, grid specs, and content/info specs.
-        
-        IMPORTANT: It may make more sense to create the left frame from within init_gui(),
-        and subsequently pass in the left_frame into this method. This can improve overall modularity. """
+        The Title frame holds dynamic labels, grid, and content/info specifications. """
+        background_color = '#2c2f33' # for dark: #2c2f33 | light: #f3f4f6
+        frame_color = '#23272a' # for dark: #23272a | light: #e1e4e8
+        active_color = '#2c2f33' # for dark: #2c2f33 | light: #d1d6da
+
         # Left Frame
-        left_frame = tk.Frame(self, bd=1, relief="flat",) # add styling as needeed
-        left_frame.grid(column=0, row=1, rowspan=2, sticky=tk.W + tk.E + tk.N + tk.S)
-        left_frame.rowconfigure(0, weight=1)
+        left_frame = tk.Frame(self, bd=1, relief="flat", bg=frame_color) # add styling as needeed
+        left_frame.grid(row=1, column=0, rowspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
+        left_frame.columnconfigure(0, weight=1)
+        left_frame.rowconfigure(1, weight=1)
         
         # Title Frame
-        title_frame = tk.Frame(left_frame, bd=1, relief="flat", bg='red')
-        title_frame.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W + tk.E + tk.N)
+        title_frame = tk.Frame(left_frame, bd=1, relief="raised", bg=active_color)
+        title_frame.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        title_frame.columnconfigure(0, weight=1) # Stretch elements within the first column of title frame
+        title_frame.rowconfigure(1, weight=1)
 
-        title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16), bg='red')
+        title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16), bg=active_color, fg='#5865F2') #555 for light
         title_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
-        # History Frame
-        history_frame = tk.Frame(left_frame, bd=1, relief="flat", height=250, bg='blue')  # Set your desired height
-        history_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
+        # Filename Label
+        self.filename_label = tk.Label(title_frame, text="Selected File: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff') #333 for light
+        self.filename_label.grid(row=1, column=0, padx=10, pady=0, sticky=tk.W)
 
-        # Model Label
-        self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg='red')
-        self.model_label.grid(row=1, column=0, padx=10, pady=10, in_=title_frame)
+        # Model Label  
+        self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg=active_color, fg='#ffffff')
+        self.model_label.grid(row=2, column=0, padx=10, pady=10, in_=title_frame, sticky=(tk.W))
+        self.model_options = ['gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4']
+        self.model_var.set(self.conversation_logic.model) # set the model var by retrieving the conversation logic
+        
+        # Create radio buttons for each model option, and display them in new rows. 
+        for i, model in enumerate(self.model_options):
+            rb = tk.Radiobutton(title_frame, text=model, variable=self.model_var, value=model, command=self.update_title_labels, fg="#ffffff", bg=active_color, selectcolor=background_color)
+            rb.grid(row=i+3, column=0, padx=10, pady=2, sticky=tk.W)
+
+        # Max Tokens Frame (A seperate frame to hold widgets together)
+        max_tokens_frame = tk.Frame(title_frame, bg=active_color)
+        max_tokens_frame.grid(row=len(self.model_options)+3, column=0, padx=10, pady=5, sticky=(tk.W, tk.E))
+        max_tokens_frame.columnconfigure(0, weight=0) # Don't stretch first column
+        max_tokens_frame.columnconfigure(1, weight=1) # stretch second column as needed
 
         # Max Tokens Label
-        self.max_tokens_label = tk.Label(title_frame, font=("Helvetica", 12))
-        self.max_tokens_label.grid(row=2, column=0, padx=10, pady=10, in_=title_frame)
+        self.max_tokens_label = tk.Label(max_tokens_frame, text="Max Tokens: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff')
+        self.max_tokens_label.grid(row=0, column=0, sticky=tk.W)
 
-        # Filename Label
-        self.filename_label = tk.Label(title_frame, font=("Helvetica", 12))
-        self.filename_label.grid(row=3, column=0, padx=10, pady=10, in_=title_frame)
+        # Max Tokens Spinbox
+        self.max_tokens_spinbox = tk.Spinbox(max_tokens_frame, from_=0, to=5000, textvariable=self.max_tokens_var, width=7, increment=250, 
+                                             font=("Helvetica", 12), command=self.update_title_labels, bg=active_color, fg='#ffffff')
+        self.max_tokens_spinbox.grid(row=0, column=1, sticky=tk.W)
+
+        # Clear Conversation Button 
+        self.clear_chat_button = tk.Button(max_tokens_frame, width=10, text="Clear Chat", command=self.on_reset_button_click)
+        self.clear_chat_button.grid(row=1, column=0, padx=5, pady=10, sticky=tk.W)
 
         # New Conversation Button
-        self.new_chat_button = tk.Button(title_frame, text="New Chat", command=self.new_conversation)
-        self.new_chat_button.grid(row=4, column=0, padx=10, pady=10, in_=title_frame)
+        self.new_chat_button = tk.Button(max_tokens_frame, width=10, text="New Chat", command=self.new_conversation)
+        self.new_chat_button.grid(row=1, column=1, padx=5, pady=10, sticky=tk.W)
+
+         # Conversation History Frame
+        history_frame = tk.Frame(left_frame, bd=1, relief="raised", height=250, bg=active_color) 
+        history_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        history_frame.columnconfigure(0, weight=1)
+        history_frame.rowconfigure(1, weight=1)
 
         # History Label
-        conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bd=1, relief="flat")
-        conv_history_label.grid(row=0, column=0, padx=10, pady=10)
+        conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bg=active_color, fg='#5865F2') #333 for light
+        conv_history_label.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W))
 
         # Creates a Treeview within the history frame
         self.conversation_treeview = ttk.Treeview(history_frame)
-        self.conversation_treeview.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S))
+        self.conversation_treeview.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.N, tk.S, tk.W))
         self.conversation_treeview["columns"] = ("filename") # define columns + column configs below 
-        self.conversation_treeview.column("#0", width=0, minwidth=0, stretch=False) 
-        self.conversation_treeview.column("filename", width=150, minwidth=150, stretch=True)
+        self.conversation_treeview.column("#0", width=0, minwidth=0, stretch=False) # Defines the structure of the treeview as a parent-child relationship. Stretch=false hides this branch structure
+        self.conversation_treeview.column("filename", width=200, minwidth=150, stretch=True)
         self.conversation_treeview.heading("filename", text="Filename:", anchor=tk.W)
         self.configure_conversation_treeview() # calls config method for conversation state management in the gui 
 
@@ -149,9 +178,9 @@ class Main(tk.Frame):
             current_name = os.path.splitext(os.path.basename(current_name))[0] # Removes .json ext from the filepath
             new_name = simpledialog.askstring("Rename Conversation", "Enter new conversation filename:", initialvalue=current_name)
             
-            if new_name:
-                new_name = new_name.replace(" ", "_") + ".json" # if 
-                new_filename = os.path.join("data", new_name)
+            if new_name: # error handling to ensure user inputs are valid 
+                new_name = new_name.replace(" ", "_") + ".json" 
+                new_filename = os.path.join("data", new_name) 
 
                 # Rename the file (unless it is conversation.json)
                 self.conversation_logic.rename_filename(selected_filename, new_filename)
@@ -198,7 +227,7 @@ class Main(tk.Frame):
         middle_frame.rowconfigure(0, weight=1)
 
         # Display the conversation text section
-        self.conversation_text = tk.Text(middle_frame, wrap="word", width=100, height=30,  font=("Helvetica", 12))
+        self.conversation_text = tk.Text(middle_frame, wrap="word", height=30,  font=("Helvetica", 12))
         self.conversation_text.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Scroll Bar:     
@@ -209,12 +238,46 @@ class Main(tk.Frame):
     def create_right_frame(self):
         # Right Frame
         right_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
-        right_frame.grid(column=2, row=1)
-        right_frame.rowconfigure(0, weight=1)
-        
-        label_text = "Hello, Right Frame!"
-        label = tk.Label(right_frame, text=label_text, font=("Helvetica", 14))
-        label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.E)
+        right_frame.grid(row=1, column=2, rowspan=2, sticky=(tk.E, tk.W, tk.N, tk.S))
+        right_frame.columnconfigure(0, weight=1)
+        right_frame.rowconfigure(1, weight=1)
+
+        # Prompt Frame 
+        self.prompt_frame = tk.Frame(right_frame, bd=1, relief="raised")
+        self.prompt_frame.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.prompt_frame.columnconfigure([0, 1], weight=1)  # Stretch columns as needed
+
+        self.prompt_1 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 1")
+        self.prompt_1.grid(row=0, column=0, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_2 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 2")
+        self.prompt_2.grid(row=0, column=1, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_3 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 3")
+        self.prompt_3.grid(row=1, column=0, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_4 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 4")
+        self.prompt_4.grid(row=1, column=1, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_5 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 5")
+        self.prompt_5.grid(row=2, column=0, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_6 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 6")
+        self.prompt_6.grid(row=2, column=1, padx=5, pady=10, sticky=(tk.W, tk.E))
+
+        self.prompt_text = tk.Text(self.prompt_frame, wrap="word", width=38, height=8,  font=("Helvetica", 12))
+        self.prompt_text.grid(row=3, columnspan=2, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        #self.MAX_BUTTON_WIDTH = 15  # Maximum button width, adjust as necessary
+
+        # Token Calculator Frame
+        self.token_calc_frame = tk.Frame(right_frame, bd=1, relief="raised")
+        self.token_calc_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.token_calc_frame.columnconfigure(0, weight=1)
+        self.token_calc_frame.rowconfigure(1, weight=1)
+
+        self.token_calc_label = tk.Label(self.token_calc_frame, text="Token Cost Calculator", font=("Helvetica", 16))
+        self.token_calc_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
     def create_toolbar_frame(self):
         """Create the Toolbar Section"""
@@ -253,11 +316,17 @@ class Main(tk.Frame):
     def on_send_button_click(self):
         """Handles the action when the Send button is clicked.
         
-        Processes user input and displays GPT response in the conversation text widget """
+        Performs and creates a threead to handle API call """
 
         user_input = self.user_input_entry.get("1.0", "end-1c") # takes in the user input 
         self.user_input_entry.delete("1.0", tk.END) 
-        gpt_response, error_response = self.conversation_logic.chat_gpt(user_input) # performs the API call (chat gpt function call, class conversation_logic)
+        threading.Thread(target=self.perform_api_call, args=(user_input,)).start()
+        self.status_var.set("API call in progress...")
+
+    def perform_api_call(self, user_input):
+        """Handles the API call by calling the necessary logic, and uses user-inputs 
+        to update and display conversation information to the GUI """
+        gpt_response, error_response = self.conversation_logic.chat_gpt(user_input)
         current_time = datetime.now().strftime("%H:%M")
         
         # Check if response is an error message
@@ -278,16 +347,17 @@ class Main(tk.Frame):
             # Display the error message in the GUI
             if "401" or "APIConnectionError" in error_response:
                 messagebox.showinfo("Authentication Error", "Invalid or expired API key. Please check your API key.")
-                self.status_var.set(f"API Call Failed! Please check your API Key, or other settngs. Time: {current_time} ")
-            
+                self.status_var.set(f"API Call Failed! Please check your API Key, or other settings. Time: {current_time} ")
+
     def on_reset_button_click(self):
         """Handles the action when the Reset Conversation button is clicked.
 
         Resets the conversation in the conversation text widget (clears the conversation in the gui) """
 
-        curr_conv = self.conversation_logic.reset_conversation() # reset function call
-        self.conversation_text.delete("1.0", tk.END)
-        self.load_conversation_text(curr_conv)
+        if messagebox.askyesno("Clear Chat", f"Are you sure you want to clear '{self.conversation_logic.filename}'?\n You cannot undo this action."):
+            curr_conv = self.conversation_logic.reset_conversation() # reset function call
+            #self.conversation_text.delete("1.0", tk.END)
+            self.load_conversation_text(curr_conv)
 
     def load_conversation_text(self, conversation):
         """Updates the conversation text in the GUI based on the loaded conversation from a file"""
@@ -395,47 +465,55 @@ class Main(tk.Frame):
         This method handles unique file name generation, filename setting, and 
         resets the prompt to its original state. Updates the GUI as needed. 
         """
-        new_filename = self.conversation_logic.new_unique_filename()
-    
-        curr_conv = self.conversation_logic.reset_conversation()
+        new_filename = self.conversation_logic.create_new_conversation() # create new conv
+        curr_conv = self.conversation_logic.load_conversation(new_filename) # load conv 
 
+        # Refresh the GUI with the text, and new file in treeview
         self.load_conversation_text(curr_conv)
-        #self.update_title_labels()
-
         self.refresh_treeview()
         
         # Return the filename in case further action is needed
         return new_filename
 
     def update_title_labels(self):
-        """Updates the model_label with the correct formatting
-        This method displays the necessary instance varibles to the GUI.
+        """Updates (and sets) the title frame labels with the correct formatting
+        This method displays the necessary instance variables to the GUI.
         """
 
-        # Selected Model Label 
-        self.model_var.set(self.conversation_logic.model)
-        current_model_text = "Selected Model: " + self.model_var.get()
-        self.model_label.config(text=current_model_text)
+        configs = self.conversation_logic.config
+        new_model = self.model_var.get()
+        new_max_tokens = self.max_tokens_var.get()
+
+        def update_config():
+            configs['model'] = new_model
+            configs['max_tokens'] = new_max_tokens
+            self.conversation_logic.update_configs(configs)
+
+        if configs['model'] != new_model or configs['max_tokens'] != new_max_tokens:
+            update_config()
         
+        current_model_text = "Model: " + self.model_var.get()
+        self.model_label.config(text=current_model_text)
+
         # Token Limit Label 
-        self.max_tokens_var.set(self.conversation_logic.max_tokens)
-        current_max_tokens_text = "Token Limit: " + str(self.max_tokens_var.get())
-        self.max_tokens_label.config(text=current_max_tokens_text)
+        #self.conversation_logic.max_tokens = self.max_tokens_var.get() # updates max token instance based on current value in spinbox
+        #self.max_tokens_var.set(self.conversation_logic.max_tokens)
+        #current_max_tokens_text = "Token Limit: " + str(self.max_tokens_var.get())
+        #self.max_tokens_label.config(text=current_max_tokens_text)
 
         # Selected File: 
         self.filename_var.set(self.conversation_logic.filename)
-        current_file_text = "Selected File: " + os.path.basename(self.filename_var.get())
+        current_file_text = "File: " + os.path.basename(self.filename_var.get())
         self.filename_label.config(text=current_file_text)
 
     def refresh_treeview(self):
-            # Refresh the treeview after add/remove/rename operations
-            self.conversation_treeview.delete(*self.conversation_treeview.get_children())
-            # Retrieves all current conversation files in the data/ directory and holds its as a list.
-            convo_files = [f for f in os.listdir(self.conversation_logic.directory) if f.endswith('.json')]
-            
-            # Populating the treeview with given filenames 
-            for filename in convo_files:
-                self.conversation_treeview.insert("", tk.END, values=(filename,))
+        # Refresh the treeview after add/remove/rename operations
+        self.conversation_treeview.delete(*self.conversation_treeview.get_children())
+        convo_files = self.conversation_logic.get_conversation_files()
+
+        # Populating the treeview with given filenames 
+        for filename in convo_files:
+            self.conversation_treeview.insert("", tk.END, values=(filename,))
 
     def exit_application(self):
         # Save if needed, then exit

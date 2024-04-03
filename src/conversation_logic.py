@@ -64,7 +64,7 @@ class ConversationLogic:
         """
 
         messages = self.load_conversation().get('messages', []) 
-        new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}], model=self.model) # calculates the ~amount of input tokens prior to the API call
+        new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}]) # calculates the ~amount of input tokens prior to the API call
         remaining_tokens = self.max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the conversation is truncated more harshly to fit within the token limit. This helps reduce costs slightly, at the cost of reducing prior context for the GPT. 
         print(f"\n~ input tokens: {new_input_tokens} ~ remaining tokens: {remaining_tokens}")
 
@@ -79,7 +79,7 @@ class ConversationLogic:
                 max_tokens=self.max_tokens, # a "limiter" that helps truncate conversations
             )
 
-            # These are return statements from the API (look at documentation for more info). These are helpful for future logging and debugging. 
+            # These are return statements from the API (look at documentation for more info). These are helpful for logging and debugging. 
             self.total_tokens_used = response.usage.total_tokens
             self.input_tokens = response.usage.prompt_tokens
             self.response_tokens = response.usage.completion_tokens
@@ -88,7 +88,8 @@ class ConversationLogic:
             
             # Log API and ChatGPT Information 
             api_log = (
-                f"Total tokens used for API call: {self.total_tokens_used} | "
+                f"Total tokens used: {self.total_tokens_used} | "
+                f"Total tokens allowed: {self.max_tokens} | " 
                 f"Total Input: {self.input_tokens} | "
                 f"Total Response: {self.response_tokens}\n"
                 f"Model Used: {self.model_type} | "
@@ -142,8 +143,16 @@ class ConversationLogic:
         while os.path.exists(filename):
             timestamp += 1
             filename = os.path.join("data", f"{prefix}{timestamp}.json")
-        self.set_filename(filename)
         return filename
+    
+    def create_new_conversation(self):
+        """Method for creating a new conversation. Directs and changes the filepath to the newly created conv,
+        and sets the prompt to default"""
+        
+        new_filename = self.new_unique_filename()
+        self.set_filename(new_filename) # redirect the file to the new file 
+        self.reset_conversation()
+        return new_filename
     
     def is_valid_filename(self, filename):
         # Check if the filename ends with .json
@@ -159,6 +168,11 @@ class ConversationLogic:
             return False
 
         return True
+    
+    def get_conversation_files(self):
+        # Retrieves all current conversation files in the data/ directory and holds its as a list.
+        convo_files = [f for f in os.listdir(self.directory) if f.endswith('.json')]
+        return convo_files
 
     def load_conversation(self, filename=None): 
         """Attempts to load the conversation from a given .json file 
@@ -176,9 +190,12 @@ class ConversationLogic:
                 loaded_conversation = json.load(file) 
                 self.set_filename(filename)  # Update the filepath if a different file is loaded (uses setter method)
                 return loaded_conversation
-        except FileNotFoundError:  
-            print(f"Conversation file not found.")
-            # implement logic for fixing errors in finding the default conversation.json file. 
+        except FileNotFoundError as e:  
+            logging.error(f"File not found error: {e}")
+            raise FileNotFoundError(f"Conversation file not found: {filename}") from e
+        except Exception as e: # Any other errors will be recorded here. 
+            logging.error(f"Error while loading conversation: {e}")
+            raise RuntimeError(f"Error loading conversation from file: {filename}") from e 
 
     def update_conversation(self, user_input, gpt_response):
         """Update the conversation state with the latest user input and GPT response.
@@ -239,14 +256,16 @@ class ConversationLogic:
         curr_conv = self.load_conversation(self.filename)
         return curr_conv
 
-    def count_tokens_in_messages(self, messages, model):
+    def count_tokens_in_messages(self, messages):
         """Count the number of tokens in a list of messages. This method is provided by tiktoken (import)
         Args:
-            messages (list): List of messages in the conversation.
+            messages (dictionary): dictionary containing each conversation message in a list [].
             model (str): The GPT model being used.
 
         Returns:
             int: The total number of tokens in the given messages. """
+        
+        model = self.model # change this value to test specific model costs 
         
         try:
             encoding = tiktoken.encoding_for_model(model)
@@ -280,7 +299,7 @@ class ConversationLogic:
         truncated_messages = [] # new list to hold conversation 
  
         for message in reversed(messages): # REVERSES order of reading messages, looking at the newest information in the conversation first. (appends newest -> oldest in the conversation)
-            message_tokens = self.count_tokens_in_messages([message], model=self.model) # calculates the current ~amount of tokens in the current message, using the model type (different amount of token costs)
+            message_tokens = self.count_tokens_in_messages([message]) # calculates the current ~amount of tokens in the current message, using the model type (different amount of token costs)
             if tokens_used + message_tokens <= remaining_tokens: # if the tokens used (tokens in the conversation that accumulate during the loop) + the amount of the current message is less than the max_tokens allowed by the api call, that message is added to this conversation
                 truncated_messages.insert(0, message) #inserts the newest message to the new conversation list 
                 tokens_used += message_tokens # increases the tokens used (in the conversation) per message added to the list (Reversed)

@@ -26,6 +26,9 @@ class Main(tk.Frame):
         self.model_var = tk.StringVar(value=self.conversation_logic.model)
         self.max_tokens_var = tk.IntVar(value=self.conversation_logic.max_tokens)
         self.filename_var = tk.StringVar(value=self.conversation_logic.filename)
+        self.system_message_var = tk.StringVar(value=self.conversation_logic.system_message)
+        self.user_message_var = tk.StringVar(value=self.conversation_logic.user_message)
+        self.assistant_message_var = tk.StringVar(value=self.conversation_logic.assistant_message)
 
         self.init_gui()
 
@@ -474,23 +477,50 @@ class Main(tk.Frame):
         
         # Return the filename in case further action is needed
         return new_filename
+    
+    def perform_config_update(self):
+
+        def update_config():
+            configs = self.conversation_logic.config
+            new_model = self.model_var.get()
+            new_max_tokens = self.max_tokens_var.get()
+            new_system_message = self.system_message_var.get()
+            new_user_message = self.user_message_var.get()
+            new_assistant_message = self.assistant_message_var.get() 
+
+            config_changed = False
+
+            if configs['model'] != new_model:
+                configs['model'] = new_model
+                config_changed = True
+
+            if configs['max_tokens'] != new_max_tokens:
+                configs['max_tokens'] = new_max_tokens
+                config_changed = True
+
+            if configs['system_message'] != new_system_message:
+                configs['system_message'] = new_system_message
+                config_changed = True
+
+            if configs['user_message'] != new_user_message:
+                configs['user_message'] = new_user_message
+                config_changed = True
+
+            if configs['assistant_message'] != new_assistant_message:
+                configs['assistant_message'] = new_assistant_message
+                config_changed = True
+
+            if config_changed:
+                self.conversation_logic.update_configs(configs)
+        
+        threading.Thread(target=update_config).start()
+
 
     def update_title_labels(self):
         """Updates (and sets) the title frame labels with the correct formatting
         This method displays the necessary instance variables to the GUI.
         """
-
-        configs = self.conversation_logic.config
-        new_model = self.model_var.get()
-        new_max_tokens = self.max_tokens_var.get()
-
-        def update_config():
-            configs['model'] = new_model
-            configs['max_tokens'] = new_max_tokens
-            self.conversation_logic.update_configs(configs)
-
-        if configs['model'] != new_model or configs['max_tokens'] != new_max_tokens:
-            update_config()
+        self.after(0, self.perform_config_update)
         
         current_model_text = "Model: " + self.model_var.get()
         self.model_label.config(text=current_model_text)

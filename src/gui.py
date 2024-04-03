@@ -1,6 +1,7 @@
-import json, os, tkinter as tk
+import threading, json, os, tkinter as tk
 from tkinter import filedialog, messagebox, ttk, simpledialog as simpledialog, messagebox as messagebox
 from datetime import datetime
+from threading import Thread
 from conversation_logic import ConversationLogic
 from configuration import ConfigManager
 
@@ -80,7 +81,7 @@ class Main(tk.Frame):
 
         # Left Frame
         left_frame = tk.Frame(self, bd=1, relief="flat", bg=frame_color) # add styling as needeed
-        left_frame.grid(row=1, column=0, rowspan=2, sticky=(tk.W, tk.N, tk.S))
+        left_frame.grid(row=1, column=0, rowspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
         left_frame.columnconfigure(0, weight=1)
         left_frame.rowconfigure(1, weight=1)
         
@@ -237,7 +238,7 @@ class Main(tk.Frame):
     def create_right_frame(self):
         # Right Frame
         right_frame = tk.Frame(self, bd=2, relief="flat") # add styling as needeed
-        right_frame.grid(row=1, column=2, rowspan=2, sticky=(tk.E, tk.N, tk.S))
+        right_frame.grid(row=1, column=2, rowspan=2, sticky=(tk.E, tk.W, tk.N, tk.S))
         right_frame.columnconfigure(0, weight=1)
         right_frame.rowconfigure(1, weight=1)
 
@@ -315,11 +316,17 @@ class Main(tk.Frame):
     def on_send_button_click(self):
         """Handles the action when the Send button is clicked.
         
-        Processes user input and displays GPT response in the conversation text widget """
+        Performs and creates a threead to handle API call """
 
         user_input = self.user_input_entry.get("1.0", "end-1c") # takes in the user input 
         self.user_input_entry.delete("1.0", tk.END) 
-        gpt_response, error_response = self.conversation_logic.chat_gpt(user_input) # performs the API call (chat gpt function call, class conversation_logic)
+        threading.Thread(target=self.perform_api_call, args=(user_input,)).start()
+        self.status_var.set("API call in progress...")
+
+    def perform_api_call(self, user_input):
+        """Handles the API call by calling the necessary logic, and uses user-inputs 
+        to update and display conversation information to the GUI """
+        gpt_response, error_response = self.conversation_logic.chat_gpt(user_input)
         current_time = datetime.now().strftime("%H:%M")
         
         # Check if response is an error message
@@ -340,8 +347,8 @@ class Main(tk.Frame):
             # Display the error message in the GUI
             if "401" or "APIConnectionError" in error_response:
                 messagebox.showinfo("Authentication Error", "Invalid or expired API key. Please check your API key.")
-                self.status_var.set(f"API Call Failed! Please check your API Key, or other settngs. Time: {current_time} ")
-            
+                self.status_var.set(f"API Call Failed! Please check your API Key, or other settings. Time: {current_time} ")
+
     def on_reset_button_click(self):
         """Handles the action when the Reset Conversation button is clicked.
 
@@ -458,13 +465,11 @@ class Main(tk.Frame):
         This method handles unique file name generation, filename setting, and 
         resets the prompt to its original state. Updates the GUI as needed. 
         """
-        new_filename = self.conversation_logic.new_unique_filename()
-    
-        curr_conv = self.conversation_logic.reset_conversation()
+        new_filename = self.conversation_logic.create_new_conversation() # create new conv
+        curr_conv = self.conversation_logic.load_conversation(new_filename) # load conv 
 
+        # Refresh the GUI with the text, and new file in treeview
         self.load_conversation_text(curr_conv)
-        #self.update_title_labels()
-
         self.refresh_treeview()
         
         # Return the filename in case further action is needed
@@ -502,14 +507,13 @@ class Main(tk.Frame):
         self.filename_label.config(text=current_file_text)
 
     def refresh_treeview(self):
-            # Refresh the treeview after add/remove/rename operations
-            self.conversation_treeview.delete(*self.conversation_treeview.get_children())
-            # Retrieves all current conversation files in the data/ directory and holds its as a list.
-            convo_files = [f for f in os.listdir(self.conversation_logic.directory) if f.endswith('.json')]
-            
-            # Populating the treeview with given filenames 
-            for filename in convo_files:
-                self.conversation_treeview.insert("", tk.END, values=(filename,))
+        # Refresh the treeview after add/remove/rename operations
+        self.conversation_treeview.delete(*self.conversation_treeview.get_children())
+        convo_files = self.conversation_logic.get_conversation_files()
+
+        # Populating the treeview with given filenames 
+        for filename in convo_files:
+            self.conversation_treeview.insert("", tk.END, values=(filename,))
 
     def exit_application(self):
         # Save if needed, then exit

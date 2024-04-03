@@ -143,8 +143,16 @@ class ConversationLogic:
         while os.path.exists(filename):
             timestamp += 1
             filename = os.path.join("data", f"{prefix}{timestamp}.json")
-        self.set_filename(filename)
         return filename
+    
+    def create_new_conversation(self):
+        """Method for creating a new conversation. Directs and changes the filepath to the newly created conv,
+        and sets the prompt to default"""
+        
+        new_filename = self.new_unique_filename()
+        self.set_filename(new_filename) # redirect the file to the new file 
+        self.reset_conversation()
+        return new_filename
     
     def is_valid_filename(self, filename):
         # Check if the filename ends with .json
@@ -160,6 +168,11 @@ class ConversationLogic:
             return False
 
         return True
+    
+    def get_conversation_files(self):
+        # Retrieves all current conversation files in the data/ directory and holds its as a list.
+        convo_files = [f for f in os.listdir(self.directory) if f.endswith('.json')]
+        return convo_files
 
     def load_conversation(self, filename=None): 
         """Attempts to load the conversation from a given .json file 

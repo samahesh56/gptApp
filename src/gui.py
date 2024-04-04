@@ -1,6 +1,6 @@
 import threading, json, os, tkinter as tk
 from tkinter import filedialog, messagebox, ttk, simpledialog as simpledialog, messagebox as messagebox
-from datetime import datetime
+from datetime import datetime, date
 from threading import Thread
 from conversation_logic import ConversationLogic
 from configuration import ConfigManager
@@ -123,7 +123,7 @@ class Main(tk.Frame):
         self.max_tokens_label.grid(row=0, column=0, sticky=tk.W)
 
         # Max Tokens Spinbox
-        self.max_tokens_spinbox = tk.Spinbox(max_tokens_frame, from_=0, to=5000, textvariable=self.max_tokens_var, width=7, increment=250, 
+        self.max_tokens_spinbox = tk.Spinbox(max_tokens_frame, from_=500, to=7500, textvariable=self.max_tokens_var, width=7, increment=250, 
                                              font=("Helvetica", 12), command=self.update_title_labels, bg=active_color, fg='#ffffff')
         self.max_tokens_spinbox.grid(row=0, column=1, sticky=tk.W)
 
@@ -250,10 +250,12 @@ class Main(tk.Frame):
         self.prompt_frame.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.prompt_frame.columnconfigure([0, 1], weight=1)  # Stretch columns as needed
 
-        self.prompt_1 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 1")
+        self.prompt_1 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 1", command=lambda: self.on_prompt_button_click(1))
         self.prompt_1.grid(row=0, column=0, padx=5, pady=10, sticky=(tk.W, tk.E))
+        self.prompt_1.config(state=tk.DISABLED)  # Disable Prompt 1 by default
+        self.selected_button = self.prompt_1  # Set Prompt 1 as the initially selected button
 
-        self.prompt_2 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 2")
+        self.prompt_2 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 2", command=lambda: self.on_prompt_button_click(2))
         self.prompt_2.grid(row=0, column=1, padx=5, pady=10, sticky=(tk.W, tk.E))
 
         self.prompt_3 = tk.Button(self.prompt_frame, width=10, height=3, text="Prompt 3")
@@ -351,6 +353,25 @@ class Main(tk.Frame):
             if "401" or "APIConnectionError" in error_response:
                 messagebox.showinfo("Authentication Error", "Invalid or expired API key. Please check your API key.")
                 self.status_var.set(f"API Call Failed! Please check your API Key, or other settings. Time: {current_time} ")
+
+    def on_prompt_button_click(self, choice):
+
+        today = date.today()
+        # Enable the previously selected button if it's not Prompt 1
+        if self.selected_button is not None:
+            self.selected_button.config(state=tk.NORMAL)
+
+        # Disable the currently selected button
+        if choice == 1:
+            self.prompt_1.config(state=tk.DISABLED)
+            self.selected_button = self.prompt_1
+            self.system_message_var.set(f"You are ChatGPT, a large language model trained by OpenAI. The current model being used is {self.conversation_logic.model}. The current date is {today}. You are an assistant providing help for any task, utilizing context for the best possible responses.")
+        elif choice == 2:
+            self.prompt_2.config(state=tk.DISABLED)
+            self.selected_button = self.prompt_2
+            self.system_message_var.set(f"You are ChatGPT, a large language model trained by OpenAI. The current model being used is {self.conversation_logic.model}. The current date is {today}. You are a marketing extraordinaire for a booming startup fusing creativity, data-smarts, and digital prowess to skyrocket growth & wow audiences. So fun. Much meme. 🚀🎯💡")
+
+        self.perform_config_update()
 
     def on_reset_button_click(self):
         """Handles the action when the Reset Conversation button is clicked.
@@ -518,18 +539,12 @@ class Main(tk.Frame):
 
     def update_title_labels(self):
         """Updates (and sets) the title frame labels with the correct formatting
-        This method displays the necessary instance variables to the GUI.
+        This method displays the necessary instance/config variables to the GUI.
         """
-        self.after(0, self.perform_config_update)
+        self.after(0, self.perform_config_update) # configs are updated to reflect GUI changes
         
-        current_model_text = "Model: " + self.model_var.get()
+        current_model_text = "Model: " + self.model_var.get() 
         self.model_label.config(text=current_model_text)
-
-        # Token Limit Label 
-        #self.conversation_logic.max_tokens = self.max_tokens_var.get() # updates max token instance based on current value in spinbox
-        #self.max_tokens_var.set(self.conversation_logic.max_tokens)
-        #current_max_tokens_text = "Token Limit: " + str(self.max_tokens_var.get())
-        #self.max_tokens_label.config(text=current_max_tokens_text)
 
         # Selected File: 
         self.filename_var.set(self.conversation_logic.filename)

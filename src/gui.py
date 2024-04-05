@@ -22,6 +22,11 @@ class Main(tk.Frame):
         self.conversation_logic = conversation_logic 
         self.filename = os.path.join('data', 'conversation.json') # initial conversation path
 
+        self.background_color = '#2c2f33' # for dark: #2c2f33 | light: #f3f4f6
+        self.frame_color = '#23272a' # for dark: #23272a | light: #e1e4e8
+        self.active_color = '#2c2f33' # for dark: #2c2f33 | light: #d1d6da
+        self.foreground_color = '#ffffff'
+
         # Tkinter variables for getting/setting dynamic information 
         self.model_var = tk.StringVar(value=self.conversation_logic.model)
         self.max_tokens_var = tk.IntVar(value=self.conversation_logic.max_tokens)
@@ -51,7 +56,6 @@ class Main(tk.Frame):
         self.create_menu_bar()
         self.create_left_frame()
         self.create_middle_frame()
-        self.create_toolbar_frame()
         self.create_right_frame()
 
     def create_menu_bar(self):
@@ -78,53 +82,50 @@ class Main(tk.Frame):
         """ Creates the Left Frame, which holds the Title Frame and Conv History Frame.
         
         The Title frame holds dynamic labels, grid, and content/info specifications. """
-        background_color = '#2c2f33' # for dark: #2c2f33 | light: #f3f4f6
-        frame_color = '#23272a' # for dark: #23272a | light: #e1e4e8
-        active_color = '#2c2f33' # for dark: #2c2f33 | light: #d1d6da
 
         # Left Frame
-        left_frame = tk.Frame(self, bd=1, relief="flat", bg=frame_color) # add styling as needeed
+        left_frame = tk.Frame(self, bd=1, relief="flat", bg=self.frame_color) # add styling as needeed
         left_frame.grid(row=1, column=0, rowspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
         left_frame.columnconfigure(0, weight=1)
         left_frame.rowconfigure(1, weight=1)
         
         # Title Frame
-        title_frame = tk.Frame(left_frame, bd=1, relief="raised", bg=active_color)
+        title_frame = tk.Frame(left_frame, bd=1, relief="raised", bg=self.active_color)
         title_frame.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
         title_frame.columnconfigure(0, weight=1) # Stretch elements within the first column of title frame
         title_frame.rowconfigure(1, weight=1)
 
-        title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16), bg=active_color, fg='#5865F2') #555 for light
+        title_label = tk.Label(title_frame, text="Gpt App", font=("Helvetica", 16), bg=self.active_color, fg='#5865F2') #555 for light
         title_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
 
         # Filename Label
-        self.filename_label = tk.Label(title_frame, text="Selected File: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff') #333 for light
+        self.filename_label = tk.Label(title_frame, text="Selected File: ", font=("Helvetica", 12), bg=self.active_color, fg=self.foreground_color) #333 for light
         self.filename_label.grid(row=1, column=0, padx=10, pady=0, sticky=tk.W)
 
         # Model Label  
-        self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg=active_color, fg='#ffffff')
+        self.model_label = tk.Label(title_frame, font=("Helvetica", 12), bg=self.active_color, fg=self.foreground_color)
         self.model_label.grid(row=2, column=0, padx=10, pady=10, in_=title_frame, sticky=(tk.W))
         self.model_options = ['gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4']
         self.model_var.set(self.conversation_logic.model) # set the model var by retrieving the conversation logic
         
         # Create radio buttons for each model option, and display them in new rows. 
         for i, model in enumerate(self.model_options):
-            rb = tk.Radiobutton(title_frame, text=model, variable=self.model_var, value=model, command=self.update_title_labels, fg="#ffffff", bg=active_color, selectcolor=background_color)
+            rb = tk.Radiobutton(title_frame, text=model, variable=self.model_var, value=model, command=self.update_title_labels, fg=self.foreground_color, bg=self.active_color, selectcolor=self.background_color)
             rb.grid(row=i+3, column=0, padx=10, pady=2, sticky=tk.W)
 
         # Max Tokens Frame (A seperate frame to hold widgets together)
-        max_tokens_frame = tk.Frame(title_frame, bg=active_color)
+        max_tokens_frame = tk.Frame(title_frame, bg=self.active_color)
         max_tokens_frame.grid(row=len(self.model_options)+3, column=0, padx=10, pady=5, sticky=(tk.W, tk.E))
         max_tokens_frame.columnconfigure(0, weight=0) # Don't stretch first column
         max_tokens_frame.columnconfigure(1, weight=1) # stretch second column as needed
 
         # Max Tokens Label
-        self.max_tokens_label = tk.Label(max_tokens_frame, text="Max Tokens: ", font=("Helvetica", 12), bg=active_color, fg='#ffffff')
+        self.max_tokens_label = tk.Label(max_tokens_frame, text="Max Tokens: ", font=("Helvetica", 12), bg=self.active_color, fg=self.foreground_color)
         self.max_tokens_label.grid(row=0, column=0, sticky=tk.W)
 
         # Max Tokens Spinbox
         self.max_tokens_spinbox = tk.Spinbox(max_tokens_frame, from_=500, to=7500, textvariable=self.max_tokens_var, width=7, increment=250, 
-                                             font=("Helvetica", 12), command=self.update_title_labels, bg=active_color, fg='#ffffff')
+                                             font=("Helvetica", 12), command=self.update_title_labels, bg=self.active_color, fg=self.foreground_color)
         self.max_tokens_spinbox.grid(row=0, column=1, sticky=tk.W)
 
         # Clear Conversation Button 
@@ -136,14 +137,20 @@ class Main(tk.Frame):
         self.new_chat_button.grid(row=1, column=1, padx=5, pady=10, sticky=tk.W)
 
          # Conversation History Frame
-        history_frame = tk.Frame(left_frame, bd=1, relief="raised", height=250, bg=active_color) 
+        history_frame = tk.Frame(left_frame, bd=1, relief="raised", height=250, bg=self.active_color) 
         history_frame.grid(row=1, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
         history_frame.columnconfigure(0, weight=1)
         history_frame.rowconfigure(1, weight=1)
 
         # History Label
-        conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bg=active_color, fg='#5865F2') #333 for light
+        conv_history_label = tk.Label(history_frame, text="Conversation History", font=("Helvetica", 16), bg=self.active_color, fg='#5865F2') #333 for light
         conv_history_label.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W))
+
+        # Treeview style options 
+        style = ttk.Style()
+        style.theme_use("alt")
+        style.configure("Treeview", background=self.active_color, rowheight=21, foreground=self.foreground_color, fieldbackground=self.active_color)
+        style.map("Treeview", background=[('selected', 'royal blue')])
 
         # Creates a Treeview within the history frame
         self.conversation_treeview = ttk.Treeview(history_frame)
@@ -224,19 +231,60 @@ class Main(tk.Frame):
 
     def create_middle_frame(self):
         # Middle Frame
-        middle_frame = tk.Frame(self, bd=2, relief="raised")
+        middle_frame = tk.Frame(self, bd=1, relief="flat", bg=self.frame_color)
         middle_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         middle_frame.columnconfigure(0, weight=1)
-        middle_frame.rowconfigure(0, weight=1)
+        middle_frame.rowconfigure(0, weight=1) # row weight = 1
+
+        # Conversation Frame
+        conv_frame = tk.Frame(middle_frame, bd=1, relief="raised", bg=self.active_color)
+        conv_frame.grid(row=0, column=0, padx=5, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        conv_frame.columnconfigure(0, weight=1) 
+        conv_frame.rowconfigure(0, weight=1) # row weight = 1
 
         # Display the conversation text section
-        self.conversation_text = tk.Text(middle_frame, wrap="word", height=30,  font=("Helvetica", 12))
-        self.conversation_text.grid(row=0, column=0, padx=10, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
-        # Scroll Bar:     
-        conversation_scroll = tk.Scrollbar(middle_frame, command=self.conversation_text.yview)
+        self.conversation_text = tk.Text(conv_frame, wrap="word", height=30,  font=("Helvetica", 12), bg='#3d4348', fg=self.foreground_color)
+        self.conversation_text.grid(row=0, column=0, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        style = ttk.Style() # Scroll bar style options 
+        style.theme_use=('alt')
+        style.configure("Custom.Vertical.TScrollbar", background=self.frame_color, troughcolor="#23272a", bordercolor="#2c2f33", arrowcolor="#5865F2")
+
+        # Conversation Scroll Bar    
+        conversation_scroll = ttk.Scrollbar(conv_frame, command=self.conversation_text.yview, style="Custom.Vertical.TScrollbar")
         conversation_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
         self.conversation_text['yscrollcommand'] = conversation_scroll.set
+
+        # Toolbar that holds user input, reset button, and send button. 
+        toolbar_frame = tk.Frame(middle_frame, bd=1, relief="raised", bg=self.active_color, height=50)
+        toolbar_frame.grid(row=1, column=0, padx=5, pady=10, sticky=(tk.W, tk.E, tk.N, tk.S))
+        toolbar_frame.columnconfigure(0, weight=1)  # Makes the user_input_entry expand horizontally.
+        
+        # User Input 
+        self.user_input_entry = tk.Text(toolbar_frame, wrap="word", height=6, font=("Helvetica", 12), bg='#3d4348', fg=self.foreground_color, insertbackground=self.foreground_color) 
+        self.user_input_entry.grid(row=0, column=0, padx=5, pady=5, sticky=(tk.E,tk.W)) 
+
+        # Input Scroll Bar    
+        input_scroll = ttk.Scrollbar(toolbar_frame, command=self.user_input_entry.yview, style="Custom.Vertical.TScrollbar")
+        input_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        self.user_input_entry['yscrollcommand'] = input_scroll.set
+
+        # Button Frame and associated Buttons 
+        button_frame = tk.Frame(toolbar_frame, bg=self.background_color)
+        button_frame.grid(row=0, column=2, sticky=tk.E)
+
+        send_button = tk.Button(button_frame, text="Send", command=self.on_send_button_click, width=15, height=2)
+        send_button.grid(row=0, column=0, padx=5, pady=10)
+
+        self.reset_button = tk.Button(button_frame, text="Reset Conversation", command=self.on_reset_button_click, width=15, height=2)
+        self.reset_button.grid(row=1, column=0, padx=5, pady=10)
+
+        # Status Bar
+        self.status_var = tk.StringVar()
+        current_time = datetime.now().strftime("%H:%M")
+        self.status_var.set(f"Waiting for API call... Last Updated: {current_time} | ChatGPT can make mistakes. Consider double checking important information.") # Set initial status 
+        self.status_bar = tk.Label(toolbar_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W )
+        self.status_bar.grid(row=1, column=0, columnspan=2, sticky=tk.W + tk.E, padx=5, pady=5)
 
     def create_right_frame(self):
         # Right Frame
@@ -283,40 +331,6 @@ class Main(tk.Frame):
 
         self.token_calc_label = tk.Label(self.token_calc_frame, text="Token Cost Calculator", font=("Helvetica", 16))
         self.token_calc_label.grid(row=0, column=0, padx=10, pady=10, sticky=tk.W)
-
-    def create_toolbar_frame(self):
-        """Create the Toolbar Section"""
-
-        # Toolbar that holds user input, reset button, and send button. 
-        toolbar = tk.Frame(self, bd=1, bg="grey", height=50)
-        toolbar.grid(row=2, column=1, sticky=tk.W + tk.E, padx=5, pady=5)
-        toolbar.columnconfigure(0, weight=1)  # Makes the user_input_entry expand horizontally.
-        
-        # User Input 
-        self.user_input_entry = tk.Text(toolbar, wrap="word", height=6) 
-        self.user_input_entry.grid(row=0, column=0,sticky=(tk.E,tk.W), padx=5, pady=5) 
-
-        # Scroll Bar    
-        input_scroll = tk.Scrollbar(toolbar, command=self.user_input_entry.yview)
-        input_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
-        self.user_input_entry['yscrollcommand'] = input_scroll.set
-
-        # Button Frame and associated Buttons 
-        button_frame = tk.Frame(toolbar, bg="grey")
-        button_frame.grid(row=0, column=2, sticky=tk.E)
-
-        send_button = tk.Button(button_frame, text="Send", command=self.on_send_button_click, width=15, height=2)
-        send_button.grid(row=0, column=0, padx=5, pady=10)
-
-        self.reset_button = tk.Button(button_frame, text="Reset Conversation", command=self.on_reset_button_click, width=15, height=2)
-        self.reset_button.grid(row=1, column=0, padx=5, pady=10)
-
-        # Status Bar
-        self.status_var = tk.StringVar()
-        current_time = datetime.now().strftime("%H:%M")
-        self.status_var.set(f"Waiting for API call... Last Updated: {current_time} | ChatGPT can make mistakes. Consider double checking important information.") # Set initial status 
-        self.status_bar = tk.Label(toolbar, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W )
-        self.status_bar.grid(row=1, column=0, columnspan=2, sticky=tk.W + tk.E, padx=5, pady=5)
 
     def on_send_button_click(self):
         """Handles the action when the Send button is clicked.

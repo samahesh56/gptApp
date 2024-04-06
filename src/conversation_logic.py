@@ -63,33 +63,28 @@ class ConversationLogic:
             }  
         """
 
-        messages = self.load_conversation().get('messages', []) 
-        new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}]) # calculates the ~amount of input tokens prior to the API call
-        remaining_tokens = self.max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the conversation is truncated more harshly to fit within the token limit. This helps reduce costs slightly, at the cost of reducing prior context for the GPT. 
-        print(f"\n~ input tokens: {new_input_tokens} ~ remaining tokens: {remaining_tokens}")
-
         original_prompt_messages = [
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": self.user_message},
             {"role": "assistant", "content": self.assistant_message}
         ]
 
+        messages = self.load_conversation().get('messages', []) 
+        new_input_tokens = self.count_tokens_in_messages([{"role": "user", "content": user_input}]) # calculates the ~amount of input tokens prior to the API call
+        remaining_tokens = self.max_tokens - new_input_tokens # This is a prompt safeguard that handles (all) large user inputs. If the user's prompt is large, the conversation is truncated more harshly to fit within the token limit. This helps reduce costs slightly, at the cost of reducing prior context for the GPT. 
+        print(f"\n~ input tokens: {new_input_tokens} ~ remaining tokens: {remaining_tokens}")
+
         messages = self.trim_conversation_history(messages, remaining_tokens) # Performs the conversation truncation, sends in conversation and the tokens left to use. This new message holds what the api call can handle, and omits the oldest message according to the tokens allowed
         
-        # Check if the original prompt messages are included in the truncated messages
+        # Check if the original prompt is included in the truncated messages
         original_prompt_included = all(
             any(msg["content"] == prompt["content"] for msg in messages)
-            for prompt in original_prompt_messages
-        )
-
+            for prompt in original_prompt_messages)
         # Add the original prompt messages if they are not included in the truncated messages
         if not original_prompt_included:
             messages = original_prompt_messages + messages
         
         messages.append({"role": "user", "content": user_input }) # appends the newest message to the conversation
-
-        for message in messages:
-            print(message)
 
         try:
             response = self.client.chat.completions.create( # This is the client API call to OpenAI
